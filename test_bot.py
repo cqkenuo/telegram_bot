@@ -3,7 +3,9 @@ from telepot.loop import MessageLoop
 import json
 import sys
 import time
-from bot import Bot, messages
+from bot import Bot, messages, bot_commands
+from log import log, LOG_FILE
+import threading
 
 
 CONFIG_FILE = "config.json"
@@ -14,18 +16,35 @@ b = Bot(bot)
 
 
 def handle_messages(msg):
-    messages.append(msg)
-
     global b
 
+    if msg['text'] == str("/terminate " + config["terminate_val"]):
+        os.kill(os.getpid(), 0)
+
     if not b.running:
+
+        log("handle_messages()", "Starting bot")
+
         if msg['text'] == "/start":
             b = Bot(bot)
             b.start()
 
+        content_type, chat_type, chat_id = telepot.glance(msg)
+        bot.sendMessage(chat_id, "Bot starting up...")
+
+    else:
+        messages.append(msg)
+
 
 if __name__ == "__main__":
-    print("Starting message loop")
+    import os
+
+    try:
+        os.remove(LOG_FILE)
+    except (OSError, FileNotFoundError):
+        pass
+
+    log("main()", "Starting message loop")
 
     b.start()
 
