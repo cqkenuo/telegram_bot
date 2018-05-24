@@ -1,0 +1,5 @@
+{
+  "token": "<Telegram Bot Api key>",
+  "log_file": "./insert_log.txt",
+  "terminate_val": "<Terminate hash value>"
+}
