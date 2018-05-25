@@ -4,16 +4,18 @@ from log import log
 import json
 import nmap
 
-bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev"]
+bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace"]
 
 monitor_cmd_call = "python wifi-monitor.py -j"
 default_port_range = '22-50000'
 
 messages = []
+packets = []
 spammers = []
 prev_commands = {}
 
 CONFIG_FILE = "config.json"
+PACKETS_FILE = "packets"
 config = json.load(open(CONFIG_FILE, "r"))
 
 
@@ -72,6 +74,7 @@ class Bot(threading.Thread):
                     if s != split_arr[0]:
                         msg += s + " "
 
+                msg = msg.strip()
                 cmd = split_arr[0]
 
                 # log("Bot.parse_command()", "msg: " + msg)
@@ -119,6 +122,9 @@ class Bot(threading.Thread):
                     if prev_commands:
                         self.parse_command(prev_commands[chatid], chatid)
                     return
+
+                elif cmd == bot_commands[6].lower():
+                    self.trace(msg, chatid)
 
                 else:
                     self.bot.sendMessage(chatid, "Invalid command")
@@ -230,13 +236,49 @@ class Bot(threading.Thread):
 
         self.bot.sendMessage(chatid, str(message + "\n"))
 
+    def trace(self, msg, chatid):
+        from scapy.layers.inet import traceroute
+
+        self.bot.sendMessage(chatid, "Starting traceroute to: " + msg)
+        m = ""
+
+        try:
+            # log("Bot.trace()", "msg: \"" + msg + "\"")
+            res, unans = traceroute([str(msg)], dport=[80, 443], maxttl=20, retry=-2)
+            log("Bot.trace()", "jews 1")
+            res.graph(target="> ./graph.svg")
+            log("Bot.trace()", "jews 2")
+
+            time.sleep(5)
+
+            with open("./graph.svg") as f:
+                m = f.readlines()
+
+            log("Bot.trace()", "jews 3 + " + str(m))
+        except:
+            log("Bot.trace()", "Unspecified error")
+            raise
+
+        if not m:
+            m = "No results returned "
+
+        self.bot.sendMessage(chatid, m)
+
     def sniff_packets(self, chatid):
-        while self.running:
+        # while self.running:
             # pc = pcap.pcap()  # construct pcap object
             # pc.setfilter('icmp')  # filter out unwanted packets
             # for timestamp, packet in pc:
             #     self.bot.sendMessage(dpkt.ethernet.Ethernet(packet), chatid)
 
-            self.bot.sendMessage(chatid, sniff(filter="ip", prn=lambda x: x.show()))
+        filter_str = "icmp and host"
+        res = sniff(filter=filter_str, count=5)
 
-            time.sleep(0.25)
+        res.pdfdump(PACKETS_FILE)
+
+        for r in res:
+            print(r)
+
+        self.bot.sendMessage(chatid, str(res))
+
+        time.sleep(0.25)
