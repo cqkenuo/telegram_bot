@@ -1,10 +1,13 @@
+import threading
 import telepot
 from scapy.all import *
 from log import log
 import json
 import nmap
+from database import RegisterDB, is_windows
 
-bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace"]
+bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace",
+                "/reg"]
 
 monitor_cmd_call = "python wifi-monitor.py -j"
 default_port_range = '22-50000'
@@ -25,6 +28,7 @@ class Bot(threading.Thread):
 
         self.running = True
         self.bot = bot
+        self.db = RegisterDB()
 
     def run(self):
         while self.running:
@@ -111,7 +115,7 @@ class Bot(threading.Thread):
 
                     self.bot.sendMessage(chatid, "Starting wifi monitor on local network")
 
-                    threading.Thread(target=self.sniff_packets(chatid)).start()
+                    threading.Thread(target=self.sniff_packets(chatid, msg)).start()
 
                 # /arp
                 elif cmd == bot_commands[4].lower():
@@ -126,6 +130,10 @@ class Bot(threading.Thread):
                 elif cmd == bot_commands[6].lower():
                     self.trace(msg, chatid)
 
+                elif cmd == bot_commands[7].lower():
+                    if msg == config['']:
+                        self.register(chatid)
+
                 else:
                     self.bot.sendMessage(chatid, "Invalid command")
 
@@ -133,6 +141,7 @@ class Bot(threading.Thread):
 
         except:
             log("parse_command()", "Unspecified exception caught")
+            self.bot.sendMessage(chatid, "Unspecified exception occurred")
             raise
 
     def scan(self, msg, chatid):
@@ -264,21 +273,40 @@ class Bot(threading.Thread):
 
         self.bot.sendMessage(chatid, m)
 
-    def sniff_packets(self, chatid):
+    def sniff_packets(self, chatid, msg):
         # while self.running:
-            # pc = pcap.pcap()  # construct pcap object
-            # pc.setfilter('icmp')  # filter out unwanted packets
-            # for timestamp, packet in pc:
-            #     self.bot.sendMessage(dpkt.ethernet.Ethernet(packet), chatid)
+        # pc = pcap.pcap()  # construct pcap object
+        # pc.setfilter('icmp')  # filter out unwanted packets
+        # for timestamp, packet in pc:
+        #     self.bot.sendMessage(dpkt.ethernet.Ethernet(packet), chatid)
 
-        filter_str = "icmp and host"
-        res = sniff(filter=filter_str, count=5)
+        try:
+            os.remove(str('./' + PACKETS_FILE + '.pdf'))
+        except (OSError, FileNotFoundError):
+            pass
+
+        if not msg or not str(msg).isnumeric():
+            msg = 5
+
+        filter_str = 'ip 137.215.98.24'  # "icmp and host"
+        if is_windows():
+            res = sniff(filter=filter_str, count=int(msg))
+        else:
+            res = sniff(iface='wlx7c8bca1c000a', filter=filter_str, count=int(msg))
 
         res.pdfdump(PACKETS_FILE)
 
-        for r in res:
-            print(r)
+        f = open(str('./' + PACKETS_FILE + '.pdf'), 'rb')
 
-        self.bot.sendMessage(chatid, str(res))
+        self.bot.sendDocument(chatid, f)
 
         time.sleep(0.25)
+
+    def register(self, chatid, msg):
+        log("Bot.register", "Confirming whether user: " + str(chatid)
+            + " is registered")
+
+        self.bot.sendMessage(chatid, "Confirming your identity...")
+
+        if self.db.exists(msg):
+            self.db.insert(chatid, msg)
