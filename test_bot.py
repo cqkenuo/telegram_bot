@@ -18,10 +18,10 @@ b = Bot(bot)
 def handle_messages(msg):
     global b
 
-    if msg['text'] == str("/terminate " + config["terminate_val"]):
-        os.kill(os.getpid(), 0)
+    # if msg['text'] == str("/terminate " + config["terminate_val"]):
+    #     os.kill(os.getpid(), 0)
 
-    if not b.running:
+    if not b.running and msg['text'] == '/start':
 
         log("handle_messages()", "Starting bot")
 

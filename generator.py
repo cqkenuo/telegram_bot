@@ -1,4 +1,4 @@
-from database import connection_string, pyodbc, log, connector, is_windows
+from database import *
 from random import SystemRandom
 import hashlib
 
@@ -24,7 +24,7 @@ def generate(count):
     else:
         database = pyodbc.connect(connection_string())
 
-    # check_for_table(database)
+    check_for_table(database)
 
     cursor = database.cursor()
 
@@ -32,7 +32,7 @@ def generate(count):
 
     for x in range(0, count):
         hash = hashlib.sha512(str(str(randValues[x][0]) + str(randValues[x][0])).encode('utf-8'))
-        cursor.execute(insert_query, (hash.hexdigest()))
+        cursor.execute(insert_query, (str(hash.hexdigest()),))
 
     cursor.close()
     database.commit()
@@ -41,11 +41,17 @@ def generate(count):
 def check_for_table(database):
     cursor = database.cursor()
 
+    # disable warnings
+    cursor.execute(disable_warnings_query)
+
     try:
         cursor.execute(create_if_not_exists_query)
     except (pyodbc.DataError, pyodbc.ProgrammingError):
         log("insert()", "Truncated string or ProgrammingError")
         raise
+
+    # Re-enable warnings
+    cursor.execute(enable_warnings_query)
 
     cursor.close()
     database.commit()

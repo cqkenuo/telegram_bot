@@ -7,10 +7,21 @@ import nmap
 from database import RegisterDB, is_windows
 
 bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace",
-                "/reg"]
+                "/reg", "/help"]
+command_descriptions = ['Starts the bot up after the /stop comamnd has been called. '
+                        'Cannot start the bot if the script is not running',
+                        'Stops the bot if it is running',
+                        'Performs a port scan on the specified address passed as a parameter i.e. /scan <ip address>',
+                        'Sniffs the packets on the host machine running the script. '
+                        'Packet count to return is an optional parameter i.e. /monitor <number>',
+                        'Performs a network scan for all the devices connected to the script hosts network',
+                        'Calls the previously received command',
+                        'Runs a traceroute to the specified website/address',
+                        'Registers the user as an admin only if a valid key is passed as a parameter',
+                        'Returns a list of available commands with descriptions']
 
 monitor_cmd_call = "python wifi-monitor.py -j"
-default_port_range = '22-50000'
+default_port_range = '22-5000'
 
 messages = []
 packets = []
@@ -34,7 +45,7 @@ class Bot(threading.Thread):
         while self.running:
             for m in messages:
                 self.handle_message(m)
-                print("handling message: " + str(m))
+                # print("handling message: " + str(m))
                 messages.remove(m)
 
             time.sleep(0.5)
@@ -97,8 +108,7 @@ class Bot(threading.Thread):
 
                 # /stop
                 elif cmd == bot_commands[1].lower():
-                    print(msg)
-                    if msg and msg == str(config["terminate_val"]).lower():
+                    if (msg and msg == str(config["terminate_val"]).lower()) or (self.db.user_exists(chatid)):
                         self.running = False
                         self.bot.sendMessage(chatid, "Bot stopping...")
                     else:
@@ -108,31 +118,38 @@ class Bot(threading.Thread):
                 elif cmd == bot_commands[2].lower():
                     self.scan(msg, chatid)
 
-                # /monitor
-                elif cmd == bot_commands[3].lower():
-                    # output = subprocess.check_output(monitor_cmd_call, shell=True)
-                    # self.bot.sendMessage(chatid, output)
-
-                    self.bot.sendMessage(chatid, "Starting wifi monitor on local network")
-
-                    threading.Thread(target=self.sniff_packets(chatid, msg)).start()
-
-                # /arp
-                elif cmd == bot_commands[4].lower():
-                    self.arp(msg, chatid)
-
                 # /prev
                 elif cmd == bot_commands[5].lower():
                     if prev_commands:
                         self.parse_command(prev_commands[chatid], chatid)
                     return
 
-                elif cmd == bot_commands[6].lower():
-                    self.trace(msg, chatid)
-
+                # /reg
                 elif cmd == bot_commands[7].lower():
-                    if msg == config['']:
-                        self.register(chatid)
+                    if not self.db.user_exists(chatid) and not self.db.clashes(chatid, msg):
+                        self.register(chatid, msg)
+                    else:
+                        self.bot.sendMessage(chatid,
+                                             "You are already registered or the key provided has already been used.")
+
+                # /help
+                elif cmd == bot_commands[8].lower():
+                    self.print_help(chatid)
+
+                elif self.db.user_exists(chatid):
+
+                    # /monitor
+                    if cmd == bot_commands[3].lower():
+                        self.bot.sendMessage(chatid, "Starting wifi monitor on local network")
+                        threading.Thread(target=self.sniff_packets(chatid, msg)).start()
+
+                    # /arp
+                    elif cmd == bot_commands[4].lower():
+                        self.arp(msg, chatid)
+
+                    # /trace
+                    elif cmd == bot_commands[6].lower():
+                        self.trace(msg, chatid)
 
                 else:
                     self.bot.sendMessage(chatid, "Invalid command")
@@ -233,7 +250,7 @@ class Bot(threading.Thread):
         hosts_list = [(x, nm[x]['status']['state']) for x in nm.all_hosts()]
 
         col_width = max(len(str(row)) for row in hosts_list) + 4  # padding
-        print("col_width: " + str(col_width))
+        log('Bot.arp()', "col_width: " + str(col_width))
         message = "{:} {:}".format("Host".ljust(col_width), "Status".ljust(col_width))
         message += "\n===============================\n"
 
@@ -288,7 +305,7 @@ class Bot(threading.Thread):
         if not msg or not str(msg).isnumeric():
             msg = 5
 
-        filter_str = 'ip 137.215.98.24'  # "icmp and host"
+        filter_str = "icmp and host"  # 'ip 137.215.98.24'
         if is_windows():
             res = sniff(filter=filter_str, count=int(msg))
         else:
@@ -303,10 +320,24 @@ class Bot(threading.Thread):
         time.sleep(0.25)
 
     def register(self, chatid, msg):
-        log("Bot.register", "Confirming whether user: " + str(chatid)
+        log("Bot.register()", "Confirming whether user: " + str(chatid)
             + " is registered")
 
         self.bot.sendMessage(chatid, "Confirming your identity...")
 
-        if self.db.exists(msg):
+        if self.db.exists(msg) and not self.db.clashes(chatid, msg):
+            log("Bot.register()", "Registering new user: " + str(chatid))
             self.db.insert(chatid, msg)
+
+            self.bot.sendMessage(chatid, "You are now registered as an admin")
+        else:
+            self.bot.sendMessage(chatid, "Could not register you. Invalid parameters provided")
+
+    def print_help(self, chatid):
+
+        ret = 'Currently supported commands: \n\n'
+
+        for x in range(0, len(command_descriptions)):
+            ret += str(bot_commands[x]) + ':\t' + str(command_descriptions[x]) + '\n\n'
+
+        self.bot.sendMessage(chatid, ret)
