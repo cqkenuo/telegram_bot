@@ -1,24 +1,12 @@
+from random import randint
 import threading
 import telepot
 from scapy.all import *
-from log import log
-import json
+from log import log, write_to_file, config
 import nmap
 from database import RegisterDB, is_windows
-
-bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace",
-                "/reg", "/help"]
-command_descriptions = ['Starts the bot up after the /stop comamnd has been called. '
-                        'Cannot start the bot if the script is not running',
-                        'Stops the bot if it is running',
-                        'Performs a port scan on the specified address passed as a parameter i.e. /scan <ip address>',
-                        'Sniffs the packets on the host machine running the script. '
-                        'Packet count to return is an optional parameter i.e. /monitor <number>',
-                        'Performs a network scan for all the devices connected to the script hosts network',
-                        'Calls the previously received command',
-                        'Runs a traceroute to the specified website/address',
-                        'Registers the user as an admin only if a valid key is passed as a parameter',
-                        'Returns a list of available commands with descriptions']
+from commands import bot_commands, command_descriptions, restricted_commands
+from search import search, r34
 
 monitor_cmd_call = "python wifi-monitor.py -j"
 default_port_range = '22-5000'
@@ -28,9 +16,12 @@ packets = []
 spammers = []
 prev_commands = {}
 
-CONFIG_FILE = "config.json"
-PACKETS_FILE = "packets"
-config = json.load(open(CONFIG_FILE, "r"))
+# Image cache
+searches = []
+results = {}
+
+PACKETS_FILE = 'packets'
+TRACE_ROUTE_FILE = 'traceroute'
 
 
 class Bot(threading.Thread):
@@ -48,7 +39,11 @@ class Bot(threading.Thread):
                 # print("handling message: " + str(m))
                 messages.remove(m)
 
-            time.sleep(0.5)
+            if len(results) > 1000:
+                results.clear()
+                searches.clear()
+
+            time.sleep(0.2)
 
         # wait for all threads to stop
         time.sleep(5)
@@ -136,6 +131,15 @@ class Bot(threading.Thread):
                 elif cmd == bot_commands[8].lower():
                     self.print_help(chatid)
 
+                # /img
+                elif cmd == bot_commands[9].lower():
+                    self.search(chatid, msg)
+
+                # /r34
+                elif cmd == bot_commands[10].lower():
+                    self.r34(chatid, msg)
+
+                # Admin-only commands
                 elif self.db.user_exists(chatid):
 
                     # /monitor
@@ -151,6 +155,13 @@ class Bot(threading.Thread):
                     elif cmd == bot_commands[6].lower():
                         self.trace(msg, chatid)
 
+                    # /clear
+                    elif cmd == bot_commands[11].lower():
+                        self.clear_cache(chatid)
+
+                elif cmd in restricted_commands:
+                    self.bot.sendMessage(chatid, 'Insufficient privileges required to run this command')
+
                 else:
                     self.bot.sendMessage(chatid, "Invalid command")
 
@@ -159,7 +170,8 @@ class Bot(threading.Thread):
         except:
             log("parse_command()", "Unspecified exception caught")
             self.bot.sendMessage(chatid, "Unspecified exception occurred")
-            raise
+            traceback.print_exc()
+            pass
 
     def scan(self, msg, chatid):
         msg = str(msg).lower()
@@ -208,38 +220,6 @@ class Bot(threading.Thread):
         self.bot.sendMessage(chatid, str(message + "\n"))
 
     def arp(self, msg, chatid):
-        # from scapy.layers.l2 import Ether
-        #
-        # self.bot.sendMessage(chatid, "Starting arp scan on local network")
-        #
-        # from scapy.layers.l2 import ARP
-        # ans, unans = srp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=str(msg + "/24")), timeout=2)
-        #
-        # devices = []
-        #
-        # for a in ans.res:
-        #     pos1 = [m.start() for m in re.finditer('pdst', str(a))]
-        #     pos2 = [m.start() for m in re.finditer('psrc', str(a))]
-        #
-        #     for pos in pos1:
-        #         val = str(a)[pos + 5:str(a).find(' ', pos)]
-        #         if val not in devices:
-        #             devices.append(val)
-        #
-        #     for pos in pos2:
-        #         val = str(a)[pos + 5:str(a).find(' ', pos)]
-        #         if val not in devices:
-        #             devices.append(val)
-        #
-        # final_str = ""
-        # for d in devices:
-        #     final_str += str(d) + "\n"  # + " hostname: " + "\n"
-        #
-        # if not final_str:
-        #     final_str = "No results returned..."
-        #
-        # self.bot.sendMessage(chatid, str(final_str))
-
         self.bot.sendMessage(chatid, "Starting nmap scan on: " + str(msg) + "/24")
 
         nm = nmap.PortScanner()  # instantiate nmap.PortScanner object
@@ -271,16 +251,11 @@ class Bot(threading.Thread):
         try:
             # log("Bot.trace()", "msg: \"" + msg + "\"")
             res, unans = traceroute([str(msg)], dport=[80, 443], maxttl=20, retry=-2)
-            log("Bot.trace()", "jews 1")
-            res.graph(target="> ./graph.svg")
-            log("Bot.trace()", "jews 2")
 
-            time.sleep(5)
+            res.pdfdump(TRACE_ROUTE_FILE)
+            f = open(str('./' + TRACE_ROUTE_FILE + '.pdf'), 'rb')
 
-            with open("./graph.svg") as f:
-                m = f.readlines()
-
-            log("Bot.trace()", "jews 3 + " + str(m))
+            self.bot.sendDocument(chatid, f)
         except:
             log("Bot.trace()", "Unspecified error")
             raise
@@ -291,12 +266,6 @@ class Bot(threading.Thread):
         self.bot.sendMessage(chatid, m)
 
     def sniff_packets(self, chatid, msg):
-        # while self.running:
-        # pc = pcap.pcap()  # construct pcap object
-        # pc.setfilter('icmp')  # filter out unwanted packets
-        # for timestamp, packet in pc:
-        #     self.bot.sendMessage(dpkt.ethernet.Ethernet(packet), chatid)
-
         try:
             os.remove(str('./' + PACKETS_FILE + '.pdf'))
         except (OSError, FileNotFoundError):
@@ -316,8 +285,6 @@ class Bot(threading.Thread):
         f = open(str('./' + PACKETS_FILE + '.pdf'), 'rb')
 
         self.bot.sendDocument(chatid, f)
-
-        time.sleep(0.25)
 
     def register(self, chatid, msg):
         log("Bot.register()", "Confirming whether user: " + str(chatid)
@@ -341,3 +308,35 @@ class Bot(threading.Thread):
             ret += str(bot_commands[x]) + ':\t' + str(command_descriptions[x]) + '\n\n'
 
         self.bot.sendMessage(chatid, ret)
+
+    def search(self, chatid, msg):
+        if msg not in searches:
+            searches.append(msg)
+
+            images = search(msg)
+
+            results[msg] = images
+        else:
+            images = results[msg]
+
+        if len(images) < 1:
+            self.bot.sendMessage(chatid, "No results returned...")
+        else:
+            self.bot.sendPhoto(chatid, images[randint(0, len(images)-1)])
+
+    def r34(self, chatid, msg):
+        images = r34(msg)
+
+        if len(images) < 1:
+            self.bot.sendMessage(chatid, "No results returned...")
+        else:
+            url = images[randint(0, len(images) - 1)]
+            # log('Bot.r34()', 'using: ' + url)
+            self.bot.sendPhoto(chatid, url)
+
+    def clear_cache(self, chatid):
+        searches.clear()
+        results.clear()
+        spammers.clear()
+
+        self.bot.sendMessage(chatid, "Local cache cleared")

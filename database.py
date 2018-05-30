@@ -1,6 +1,6 @@
 import pyodbc
 import sys
-from log import log
+from log import log, config
 from mysql import connector
 
 create_if_not_exists_query = \
@@ -18,18 +18,19 @@ disable_warnings_query = "SET sql_notes = 0;"
 enable_warnings_query = "SET sql_notes = 1;"
 
 # MySQL connection string
-connection_string_mysql_linux = ("DRIVER={MySQL ODBC 8.0 Driver};"
-                                 "SERVER=127.0.0.1;"
-                                 "DATABASE=test;"
-                                 "PORT=3306;"
-                                 "USER=test;PASSWORD=Test123Test!*;"
+connection_string_mysql_linux = ("DRIVER={MySQL ODBC 5.1 Driver};"
+                                 "SERVER=" + config['db_host'] + ";"
+                                 "DATABASE=" + config['db_name'] + ";"
+                                 "PORT=" + config['db_port'] + ";"
+                                 "USER=" + config['db_user'] + ";"
+                                 "PASSWORD=" + config['db_pass'] + ";"
                                  "OPTION=3;")
 
 connection_string_mysql_win = {
-    'user': 'test',
-    'password': 'Test123Test!*',
-    'host': '127.0.0.1',
-    'database': 'test',
+    'user': config['db_user'],
+    'password': config['db_pass'],
+    'host': config['db_host'],
+    'database': config['db_name'],
     'raise_on_warnings': True,
     'use_pure': False,
 }
