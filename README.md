@@ -17,13 +17,16 @@ This is a personalized telegram bot with the following commands available to use
 
 ## Example usage (commandline): 
 
+#### Note: As this bot uses the PyX package to create pdf dumps, a form of the LaTeX software package needs to be installed
+The LaTeX packages can be found at [LaTeX](https://www.latex-project.org/get/#tex-distributions)
+
 1. Modify the `template_config.json` to suit your setup and rename to `config.json`
 
 2. Install the required packages: `pip install -r requirements.txt --upgrade`
 
 3. Run the following in console / terminal: `python test_bot`
 
-Then in telegram open the chat link: [telegram_bot](t.me/thotman_test_bot)
+4. Then in telegram open the chat link: [telegram_bot](t.me/thotman_test_bot)
 
 ## Example usage in code
 ```python
