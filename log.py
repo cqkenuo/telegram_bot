@@ -18,6 +18,15 @@ def log(origin, message):
         print("[" + origin + "] " + str(message))
 
 
+def clear_logs():
+    import os
+
+    try:
+        os.remove(LOG_FILE)
+    except (OSError, FileNotFoundError):
+        pass
+
+
 def write_to_file(file, text):
     f = open(file, 'w')
     f.write(text)

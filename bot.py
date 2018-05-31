@@ -1,11 +1,12 @@
 from random import randint
-import threading
+
+import nmap
 import telepot
 from scapy.all import *
-from log import log, write_to_file, config
-import nmap
-from database import RegisterDB, is_windows
+
 from commands import bot_commands, command_descriptions, restricted_commands
+from database import RegisterDB, is_windows
+from log import log, config
 from search import search, r34
 
 monitor_cmd_call = "python wifi-monitor.py -j"
@@ -62,14 +63,18 @@ class Bot(threading.Thread):
 
         log("Bot.handle_message()", telepot.glance(msg, flavor=flavor))
 
-        if str(msg['text']).split(" ")[0] in bot_commands:
-            threading.Thread(target=self.parse_command(msg['text'], chat_id)).start()
-        elif content_type == 'text' and msg['text']:
-            # self.bot.sendMessage(chat_id, msg['text'])
-            if chat_id not in spammers:
-                spammers.append(chat_id)
-            else:
-                self.bot.sendMessage(chat_id, "Please stop spamming")
+        try:
+            if str(msg['text']).split(" ")[0] in bot_commands:
+                threading.Thread(target=self.parse_command(msg['text'], chat_id)).start()
+            elif content_type == 'text' and msg['text']:
+                # self.bot.sendMessage(chat_id, msg['text'])
+                if chat_id not in spammers:
+                    spammers.append(chat_id)
+                else:
+                    self.bot.sendMessage(chat_id, "Please stop spamming")
+        except:
+            traceback.print_exc()
+            pass
 
     def parse_command(self, cmd, chatid):
         try:
@@ -338,5 +343,7 @@ class Bot(threading.Thread):
         searches.clear()
         results.clear()
         spammers.clear()
+        packets.clear()
+        prev_commands.clear()
 
         self.bot.sendMessage(chatid, "Local cache cleared")

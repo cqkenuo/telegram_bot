@@ -33,6 +33,8 @@ def search(search_key):
         except:
             pass
 
+    driver.quit()
+
     return images
 
 
@@ -49,6 +51,8 @@ def r34(search_key, limit=20):
     for img in results:
         # print(img['file_url'])
         images.append(img['file_url'])
+
+    site.close()
 
     return images
 
