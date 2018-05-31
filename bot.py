@@ -6,7 +6,7 @@ from scapy.all import *
 
 from commands import bot_commands, command_descriptions, restricted_commands
 from database import RegisterDB, is_windows
-from log import log, config
+from log import log, config, LOG_FILE
 from search import search, r34
 
 monitor_cmd_call = "python wifi-monitor.py -j"
@@ -61,7 +61,7 @@ class Bot(threading.Thread):
         flavor = telepot.flavor(msg=msg)
         # print(content_type, chat_type, chat_id)
 
-        log("Bot.handle_message()", telepot.glance(msg, flavor=flavor))
+        # log("Bot.handle_message()", telepot.glance(msg, flavor=flavor))
 
         try:
             if str(msg['text']).split(" ")[0] in bot_commands:
@@ -163,6 +163,14 @@ class Bot(threading.Thread):
                     # /clear
                     elif cmd == bot_commands[11].lower():
                         self.clear_cache(chatid)
+
+                    elif cmd == bot_commands[12].lower():
+                        try:
+                            f = open(LOG_FILE, 'r')
+                            self.bot.sendDocument(chatid, f)
+                        except:
+                            self.bot.sendMessage(chatid, "Log file could not be opened...")
+                            pass
 
                 elif cmd in restricted_commands:
                     self.bot.sendMessage(chatid, 'Insufficient privileges required to run this command')

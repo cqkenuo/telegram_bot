@@ -1,5 +1,5 @@
 bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace",
-                "/reg", "/help", "/img", "/r34", "/clear"]
+                "/reg", "/help", "/img", "/r34", "/clear", "/log"]
 
 restricted_commands = ["/monitor", "/arp", "/trace", "/clear"]
 
@@ -16,4 +16,5 @@ command_descriptions = ['Starts the bot up after the /stop comamnd has been call
                         'Returns a list of available commands with descriptions',
                         'Returns a random image result from the search (safe search is off by default)',
                         'Performs an r34 search for the provided search term',
-                        'Clears any cache arrays present']
+                        'Clears any cache arrays present',
+                        'Returns the debugging log file (personal information still saved in this version of the bot)']

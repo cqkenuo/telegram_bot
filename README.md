@@ -14,6 +14,7 @@ This is a personalized telegram bot with the following commands available to use
 - /img: Returns a random image result from the search (safe search is off by default)
 - /r34: Performs an r34 search for the provided search term
 - /clear: Clears any cache arrays present
+- /log: Returns the debugging log file (personal information still saved in this version of the bot)
 
 ## Example usage (commandline): 
 
