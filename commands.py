@@ -1,5 +1,5 @@
 bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace",
-                "/reg", "/help", "/img", "/r34", "/clear", "/log"]
+                "/reg", "/help", "/img", "/r34", "/clear", "/log", "/live", "/mybb"]
 
 restricted_commands = ["/monitor", "/arp", "/trace", "/clear"]
 
@@ -17,4 +17,6 @@ command_descriptions = ['Starts the bot up after the /stop comamnd has been call
                         'Returns a random image result from the search (safe search is off by default)',
                         'Performs an r34 search for the provided search term',
                         'Clears any cache arrays present',
-                        'Returns the debugging log file (personal information still saved in this version of the bot)']
+                        'Returns the debugging log file (personal information still saved in this version of the bot)',
+                        'Returns a random result from the specified live leak search',
+                        'Returns the specified number (default 5) of the latest articles from the MyBroadband website']

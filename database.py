@@ -1,5 +1,7 @@
 import pyodbc
 import sys
+import traceback
+
 from log import log, config
 from mysql import connector
 
@@ -122,6 +124,7 @@ class RegisterDB:
             log("RegisterDB.exists()", "Truncating string error")
 
         self.cursor.close()
+        self.db.commit()
 
         return False
 
@@ -141,8 +144,12 @@ class RegisterDB:
 
         except pyodbc.DataError as d:
             log("RegisterDB.user_exists()", "Data error")
+        except:
+            traceback.print_exc()
+            pass
 
         self.cursor.close()
+        self.db.commit()
 
         return False
 

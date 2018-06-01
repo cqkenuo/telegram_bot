@@ -7,7 +7,7 @@ os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
 
 buildOptions = dict(
     packages=['test_bot', 'generator', 'bot'],
-    includes=['selenium', 'cx_Freeze', 'nmap', 'telepot',
+    includes=['selenium', 'nmap', 'telepot',
               'pyodbc', 'bs4', 'mysql', 'scapy'],
     include_files=['chromedriver.exe', 'config.json'],
     excludes=[])

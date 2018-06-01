@@ -7,7 +7,7 @@ from scapy.all import *
 from commands import bot_commands, command_descriptions, restricted_commands
 from database import RegisterDB, is_windows
 from log import log, config, LOG_FILE
-from search import search, r34
+from search import search, r34, live_leak, my_bb
 
 monitor_cmd_call = "python wifi-monitor.py -j"
 default_port_range = '22-5000'
@@ -21,8 +21,15 @@ prev_commands = {}
 searches = []
 results = {}
 
+# MyBroadband cache
+articles = []
+
 PACKETS_FILE = 'packets'
 TRACE_ROUTE_FILE = 'traceroute'
+
+
+def articles_comparison():
+    return articles[0:5] == my_bb()[0:5]
 
 
 class Bot(threading.Thread):
@@ -144,6 +151,14 @@ class Bot(threading.Thread):
                 elif cmd == bot_commands[10].lower():
                     self.r34(chatid, msg)
 
+                # /live
+                elif cmd == bot_commands[13].lower():
+                    self.live(chatid, msg)
+
+                # /mybb
+                elif cmd == bot_commands[14].lower():
+                    self.my_broadband(chatid, msg)
+
                 # Admin-only commands
                 elif self.db.user_exists(chatid):
 
@@ -173,7 +188,7 @@ class Bot(threading.Thread):
                             pass
 
                 elif cmd in restricted_commands:
-                    self.bot.sendMessage(chatid, 'Insufficient privileges required to run this command')
+                    self.bot.sendMessage(chatid, 'Insufficient privileges to run this command')
 
                 else:
                     self.bot.sendMessage(chatid, "Invalid command")
@@ -347,11 +362,39 @@ class Bot(threading.Thread):
             # log('Bot.r34()', 'using: ' + url)
             self.bot.sendPhoto(chatid, url)
 
+    def live(self, chatid, msg):
+        results = live_leak(msg)
+
+        if len(results) < 1:
+            self.bot.sendMessage(chatid, "No results returned...")
+        else:
+            url = results[randint(0, len(results) - 1)]
+            # log('Bot.r34()', 'using: ' + url)
+            self.bot.sendMessage(chatid, url)
+
+    def my_broadband(self, chatid, msg):
+        global articles
+
+        if len(articles) < 1:
+            articles = my_bb()
+
+        if len(articles) < 1:
+            self.bot.sendMessage(chatid, "No results returned...")
+        else:
+            count = 5
+            if msg:
+                count = int(msg)
+
+            for x in range(0, count):
+                self.bot.sendMessage(chatid, articles[x])
+
     def clear_cache(self, chatid):
         searches.clear()
         results.clear()
         spammers.clear()
         packets.clear()
         prev_commands.clear()
+        articles.clear()
 
-        self.bot.sendMessage(chatid, "Local cache cleared")
+        if chatid:
+            self.bot.sendMessage(chatid, "Local cache cleared")

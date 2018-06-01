@@ -11,15 +11,8 @@ def search(search_key):
     url = 'https://duckduckgo.com/?q=%s&t=h_&iax=images&ia=images&kp=-2&k1=-1' % search_key
     images = []
 
-    options = webdriver.ChromeOptions()
-    # options.add_argument('window-size=1680×1050')
-    options.add_argument('headless')
-
-    driver = webdriver.Chrome(chrome_options=options)
-    driver.get(url)
-
+    driver = get_chrome_driver(url)
     parsed = BeautifulSoup(str(driver.find_element_by_class_name('site-wrapper').get_attribute('innerHTML')), 'lxml')
-
     results = parsed.findAll('img')
 
     for img in results:
@@ -40,23 +33,75 @@ def search(search_key):
 
 def r34(search_key, limit=20):
     url = 'https://rule34.xxx/index.php?page=dapi&s=post&q=index&limit={}&tags={}'.format(limit, search_key)
-    site = urlopen(url)
-    data = site.read()
-
-    parsed = BeautifulSoup(data, 'lxml')
+    parsed = BeautifulSoup(site_data(url), 'lxml')
     results = parsed.find_all('post')
 
     images = []
 
     for img in results:
-        # print(img['file_url'])
         images.append(img['file_url'])
-
-    site.close()
 
     return images
 
 
+def live_leak(search_term):
+    url = 'https://www.liveleak.com/browse?q={}&a=list&submit=Submit'.format(search_term)
+    parsed = BeautifulSoup(site_data(url), 'lxml')
+    results = parsed.find_all('a')
+
+    videos = []
+    for vid in results:
+        try:
+            val = str(vid['href'])
+
+            if 'liveleak' in val.lower() and 'view' in val.lower():
+                videos.append(val)
+        except:
+            pass
+
+    return videos
+
+
+def my_bb():
+    url = 'https://www.mybroadband.co.za/news'
+
+    driver = get_chrome_driver(url)
+
+    parsed = BeautifulSoup(str(driver.find_element_by_class_name('feed_article_container').get_attribute('innerHTML')), 'lxml')
+
+    results = parsed.findAll('a', attrs={'class': 'post-thumbnail'})
+
+    articles = []
+    for a in results:
+        try:
+            val = str(a['href'])
+
+            if 'mybroadband' in val.lower() and 'news' in val.lower():
+                articles.append(val)
+        except:
+            pass
+
+    driver.quit()
+
+    return articles[0:len(articles)]
+
+
+def site_data(url):
+    site = urlopen(url)
+    data = site.read()
+    site.close()
+    return data
+
+
+def get_chrome_driver(url):
+    options = webdriver.ChromeOptions()
+    options.add_argument('headless')
+    driver = webdriver.Chrome(chrome_options=options)
+    driver.get(url)
+
+    return driver
+
+
 if __name__ == "__main__":
-    for i in r34("lick"):
+    for i in my_bb():
         print(i)
