@@ -81,6 +81,28 @@ def my_bb():
     return articles[0:len(articles)]
 
 
+def chan():
+    url = 'http://boards.4chan.org/b/'
+
+    driver = get_chrome_driver(url)
+    parsed = BeautifulSoup(str(driver.find_element_by_class_name('board').get_attribute('innerHTML')), 'lxml')
+    results = parsed.findAll('img')
+
+    images = []
+    for im in results:
+        try:
+            val = str(im['src'])
+
+            if 'i.4cdn' in val.lower():
+                images.append(str('https://' + val[2:]))
+        except:
+            pass
+
+    driver.quit()
+
+    return images
+
+
 def site_data(url):
     site = urlopen(url)
     data = site.read()
@@ -107,5 +129,5 @@ def get_firefox_driver(url):
 
 
 if __name__ == "__main__":
-    for i in my_bb():
+    for i in chan():
         print(i)

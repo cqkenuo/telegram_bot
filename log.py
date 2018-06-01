@@ -21,6 +21,8 @@ def log(origin, message, is_exception=False):
         else:
             logging.debug(message)
 
+        print(message)
+
 
 def clear_logs():
     try:

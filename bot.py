@@ -7,7 +7,7 @@ from scapy.all import *
 from commands import bot_commands, command_descriptions, restricted_commands
 from database import RegisterDB, is_windows
 from log import log, config, LOG_FILE
-from search import search, r34, live_leak, my_bb
+from search import search, r34, live_leak, my_bb, chan
 
 default_port_range = '22-5000'
 
@@ -27,55 +27,39 @@ PACKETS_FILE = 'packets'
 TRACE_ROUTE_FILE = 'traceroute'
 
 
+def clear_cache():
+    searches.clear()
+    results.clear()
+    spammers.clear()
+    packets.clear()
+    prev_commands.clear()
+    articles.clear()
+
+
 def articles_comparison():
     return articles[0:5] == my_bb()[0:5]
 
 
-class Bot(threading.Thread):
-    def __init__(self, bot):
-        threading.Thread.__init__(self)
+class Bot(telepot.helper.ChatHandler):
+    def __init__(self, *args, **kwargs):
+        super(Bot, self).__init__(*args, **kwargs)
 
         self.running = True
-        self.bot = bot
         self.db = RegisterDB()
 
-    def run(self):
-        while self.running:
-            for message in messages:
-                threading.Thread(target=self.handle_message(message)).start()
-                messages.remove(message)
-
-            if len(results) > 1000:
-                results.clear()
-                searches.clear()
-
-            time.sleep(0.2)
-
-        # wait for all threads to stop
-        time.sleep(2)
-        self.stop()
-
-    def stop(self):
-        self.running = False
-        self.clear_cache(None)
-        log("Bot.stop()", "Bot stopping...")
-
-    def handle_message(self, msg):
+    def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
-        flavor = telepot.flavor(msg=msg)
-        # print(content_type, chat_type, chat_id)
-
-        # log("Bot.handle_message()", telepot.glance(msg, flavor=flavor))
 
         try:
             if str(msg['text']).split(" ")[0] in bot_commands:
-                self.parse_command(msg['text'], chat_id)
+                Thread(target=self.parse_command, args=(msg['text'], chat_id,)).start()
+                # self.parse_command(msg['text'], chat_id)
             elif content_type == 'text' and msg['text']:
                 # self.bot.sendMessage(chat_id, msg['text'])
                 if chat_id not in spammers:
                     spammers.append(chat_id)
                 else:
-                    self.bot.sendMessage(chat_id, "Please stop spamming")
+                    self.sender.sendMessage("Please stop spamming")
         except:
             log('Bot.handle_message()', 'Unspecified exception caught', True)
             pass
@@ -107,97 +91,90 @@ class Bot(threading.Thread):
             if str(cmd).split(" ")[0] in bot_commands:
                 log("Bot.parse_command()", "command received: " + cmd)
 
-                if cmd == bot_commands[0] and self.running:
-                    self.bot.sendMessage(chatid, "Bot is already running")
-
-                # /stop
-                elif cmd == bot_commands[1].lower():
-                    if (msg and msg == str(config["terminate_val"]).lower()) or (self.db.user_exists(chatid)):
-                        self.running = False
-                        self.bot.sendMessage(chatid, "Bot stopping...")
-                    else:
-                        self.bot.sendMessage(chatid, "Invalid command")
-
                 # /scan
-                elif cmd == bot_commands[2].lower():
-                    self.scan(msg, chatid)
+                if cmd == bot_commands[0].lower():
+                    self.scan(msg)
 
                 # /prev
-                elif cmd == bot_commands[5].lower():
+                elif cmd == bot_commands[3].lower():
                     if prev_commands:
                         self.parse_command(prev_commands[chatid], chatid)
                     return
 
                 # /reg
-                elif cmd == bot_commands[7].lower():
+                elif cmd == bot_commands[5].lower():
                     if not self.db.user_exists(chatid) and not self.db.clashes(chatid, msg):
                         self.register(chatid, msg)
                     else:
-                        self.bot.sendMessage(chatid,
-                                             "You are already registered or the key provided has already been used.")
+                        self.sender.sendMessage("You are already registered or the key provided has already been used.")
 
                 # /help
-                elif cmd == bot_commands[8].lower():
-                    self.print_help(chatid)
+                elif cmd == bot_commands[6].lower():
+                    self.print_help()
 
                 # /img
-                elif cmd == bot_commands[9].lower():
-                    self.search(chatid, msg)
+                elif cmd == bot_commands[7].lower():
+                    self.search(msg)
 
                 # /r34
-                elif cmd == bot_commands[10].lower():
-                    self.r34(chatid, msg)
+                elif cmd == bot_commands[8].lower():
+                    self.r34(msg)
 
                 # /live
-                elif cmd == bot_commands[13].lower():
-                    self.live(chatid, msg)
+                elif cmd == bot_commands[11].lower():
+                    self.live(msg)
 
                 # /mybb
-                elif cmd == bot_commands[14].lower():
-                    self.my_broadband(chatid, msg)
+                elif cmd == bot_commands[12].lower():
+                    self.my_broadband(msg)
+
+                # /b
+                elif cmd == bot_commands[13].lower():
+                    self.chanb()
 
                 # Admin-only commands
                 elif self.db.user_exists(chatid):
 
                     # /monitor
-                    if cmd == bot_commands[3].lower():
-                        self.bot.sendMessage(chatid, "Starting wifi monitor on local network")
-                        threading.Thread(target=self.sniff_packets(chatid, msg)).start()
+                    if cmd == bot_commands[1].lower():
+                        self.sender.sendMessage("Starting wifi monitor on local network")
+                        threading.Thread(target=self.sniff_packets(msg)).start()
 
                     # /arp
-                    elif cmd == bot_commands[4].lower():
-                        self.arp(msg, chatid)
+                    elif cmd == bot_commands[2].lower():
+                        self.arp(msg)
 
                     # /trace
-                    elif cmd == bot_commands[6].lower():
-                        self.trace(msg, chatid)
+                    elif cmd == bot_commands[4].lower():
+                        self.trace(msg)
 
                     # /clear
-                    elif cmd == bot_commands[11].lower():
-                        self.clear_cache(chatid)
+                    elif cmd == bot_commands[9].lower():
+                        self.clear_cache()
 
-                    elif cmd == bot_commands[12].lower():
+                    # /log
+                    elif cmd == bot_commands[10].lower():
                         try:
                             f = open(LOG_FILE, 'r')
-                            self.bot.sendDocument(chatid, f)
+                            self.sender.sendDocument(f)
                         except:
-                            self.bot.sendMessage(chatid, "Log file could not be opened...")
+                            self.sender.sendMessage("Log file could not be opened...")
                             pass
 
                 elif cmd in restricted_commands:
-                    self.bot.sendMessage(chatid, 'Insufficient privileges to run this command')
+                    self.sender.sendMessage('Insufficient privileges to run this command')
 
                 else:
-                    self.bot.sendMessage(chatid, "Invalid command")
+                    self.sender.sendMessage("Invalid command")
 
             prev_commands[chatid] = str(cmd + " " + msg)
 
         except:
             log("parse_command()", "Unspecified exception caught", True)
-            self.bot.sendMessage(chatid, "Unspecified exception occurred")
+            self.sendMessage("Unspecified exception occurred")
             pass
 
-    def scan(self, msg, chatid):
+    def scan(self, msg):
         msg = str(msg).lower()
         port_max = ""
         try:
@@ -213,8 +190,8 @@ class Bot(threading.Thread):
 
         message = ""
 
-        self.bot.sendMessage(chatid, "Starting nmap scan: \nhost: " + msg
-                             + "\nports: " + ports)
+        self.sender.sendMessage("Starting nmap scan: \nhost: " + msg
+                                + "\nports: " + ports)
 
         nm = nmap.PortScanner()  # instantiate nmap.PortScanner object
         nm.scan(msg, ports)  # scan host 127.0.0.1, ports from 22 to 443
@@ -241,10 +218,10 @@ class Bot(threading.Thread):
         if not message:
             message = "No results returned..."
 
-        self.bot.sendMessage(chatid, str(message + "\n"))
+        self.sender.sendMessage(str(message + "\n"))
 
-    def arp(self, msg, chatid):
-        self.bot.sendMessage(chatid, "Starting nmap scan on: " + str(msg) + "/24")
+    def arp(self, msg):
+        self.sender.sendMessage("Starting nmap scan on: " + str(msg) + "/24")
 
         nm = nmap.PortScanner()  # instantiate nmap.PortScanner object
         nm.scan(hosts=str(str(msg) + "/24"), arguments='-sP')  # ( -PE -PA21,23,80,135,3389,27036)   scan host
@@ -264,12 +241,12 @@ class Bot(threading.Thread):
         if not message:
             message = "No results returned..."
 
-        self.bot.sendMessage(chatid, str(message + "\n"))
+        self.sender.sendMessage(str(message + "\n"))
 
-    def trace(self, msg, chatid):
+    def trace(self, msg):
         from scapy.layers.inet import traceroute
 
-        self.bot.sendMessage(chatid, "Starting traceroute to: " + msg)
+        self.sender.sendMessage("Starting traceroute to: " + msg)
         m = ""
 
         try:
@@ -279,7 +256,7 @@ class Bot(threading.Thread):
             res.pdfdump(TRACE_ROUTE_FILE)
             f = open(str('./' + TRACE_ROUTE_FILE + '.pdf'), 'rb')
 
-            self.bot.sendDocument(chatid, f)
+            self.sender.sendDocument(f)
         except:
             log("Bot.trace()", "Unspecified error", True)
             raise
@@ -287,9 +264,9 @@ class Bot(threading.Thread):
         if not m:
             m = "No results returned "
 
-        self.bot.sendMessage(chatid, m)
+        self.sender.sendMessage(m)
 
-    def sniff_packets(self, chatid, msg):
+    def sniff_packets(self, msg):
         try:
             os.remove(str('./' + PACKETS_FILE + '.pdf'))
         except (OSError, FileNotFoundError):
@@ -308,83 +285,90 @@ class Bot(threading.Thread):
 
         f = open(str('./' + PACKETS_FILE + '.pdf'), 'rb')
 
-        self.bot.sendDocument(chatid, f)
+        self.sender.sendDocument(f)
 
     def register(self, chatid, msg):
-        log("Bot.register()", "Confirming whether user: " + str(chatid)
-            + " is registered")
+        log("Bot.register()", "Confirming whether user is registered")
 
-        self.bot.sendMessage(chatid, "Confirming your identity...")
+        self.sender.sendMessage("Confirming your identity...")
 
         if self.db.exists(msg) and not self.db.clashes(chatid, msg):
-            log("Bot.register()", "Registering new user: " + str(chatid))
+            log("Bot.register()", "Registering new user")
             self.db.insert(chatid, msg)
 
-            self.bot.sendMessage(chatid, "You are now registered as an admin")
+            self.sender.sendMessage("You are now registered as an admin")
         else:
-            self.bot.sendMessage(chatid, "Could not register you. Invalid parameters provided")
+            self.sender.sendMessage("Could not register you. Invalid parameters provided")
 
-    def print_help(self, chatid):
+    def print_help(self):
 
         ret = 'Currently supported commands: \n\n'
 
         for x in range(0, len(command_descriptions)):
             ret += str(bot_commands[x]) + ':\t' + str(command_descriptions[x]) + '\n\n'
 
-        self.bot.sendMessage(chatid, ret)
+        self.sender.sendMessage(ret)
 
-    def search(self, chatid, msg):
+    def search(self, msg):
         if msg not in searches:
             searches.append(msg)
-
             images = search(msg)
-
             results[msg] = images
         else:
             images = results[msg]
 
         if len(images) < 1:
-            self.bot.sendMessage(chatid, "No results returned...")
+            self.sender.sendMessage("No results returned...")
         else:
-            self.bot.sendPhoto(chatid, images[randint(0, len(images)-1)])
+            self.sender.sendPhoto(images[randint(0, len(images) - 1)])
 
-    def r34(self, chatid, msg):
+    def r34(self, msg):
         images = r34(msg)
 
         if len(images) < 1:
-            self.bot.sendMessage(chatid, "No results returned...")
+            self.sender.sendMessage("No results returned...")
         else:
             url = images[randint(0, len(images) - 1)]
             # log('Bot.r34()', 'using: ' + url)
-            self.bot.sendPhoto(chatid, url)
+            self.sender.sendPhoto(url)
 
-    def live(self, chatid, msg):
+    def live(self, msg):
         results = live_leak(msg)
 
         if len(results) < 1:
-            self.bot.sendMessage(chatid, "No results returned...")
+            self.sender.sendMessage("No results returned...")
         else:
             url = results[randint(0, len(results) - 1)]
             # log('Bot.r34()', 'using: ' + url)
-            self.bot.sendMessage(chatid, url)
+            self.sender.sendMessage(url)
 
-    def my_broadband(self, chatid, msg):
+    def my_broadband(self, msg):
         global articles
 
         if len(articles) < 1:
             articles = my_bb()
 
         if len(articles) < 1:
-            self.bot.sendMessage(chatid, "No results returned...")
+            self.sender.sendMessage("No results returned...")
         else:
             count = 5
             if msg:
                 count = int(msg)
 
             for x in range(0, count):
-                self.bot.sendMessage(chatid, articles[x])
+                self.sender.sendMessage(articles[x])
 
-    def clear_cache(self, chatid):
+    def chanb(self):
+        results = chan()
+
+        if len(results) < 1:
+            self.sender.sendMessage("No results returned...")
+        else:
+            url = results[randint(0, len(results) - 1)]
+            # log('Bot.r34()', 'using: ' + url)
+            self.sender.sendPhoto(url)
+
+    def clear_cache(self):
         searches.clear()
         results.clear()
         spammers.clear()
@@ -392,5 +376,4 @@ class Bot(threading.Thread):
         prev_commands.clear()
         articles.clear()
 
-        if chatid:
-            self.bot.sendMessage(chatid, "Local cache cleared")
+        self.sender.sendMessage("Local cache cleared")

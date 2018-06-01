@@ -1,12 +1,9 @@
-bot_commands = ["/start", "/stop", "/scan", "/monitor", "/arp", "/prev", "/trace",
-                "/reg", "/help", "/img", "/r34", "/clear", "/log", "/live", "/mybb"]
+bot_commands = ["/scan", "/monitor", "/arp", "/prev", "/trace", "/reg", "/help",
+                "/img", "/r34", "/clear", "/log", "/live", "/mybb", "/b"]
 
 restricted_commands = ["/monitor", "/arp", "/trace", "/clear"]
 
-command_descriptions = ['Starts the bot up after the /stop comamnd has been called. '
-                        'Cannot start the bot if the script is not running',
-                        'Stops the bot if it is running',
-                        'Performs a port scan on the specified address passed as a parameter i.e. /scan <ip address>',
+command_descriptions = ['Performs a port scan on the specified address passed as a parameter i.e. /scan <ip address>',
                         'Sniffs the packets on the host machine running the script. '
                         'Packet count to return is an optional parameter i.e. /monitor <number>',
                         'Performs a network scan for all the devices connected to the script hosts network',
@@ -19,4 +16,5 @@ command_descriptions = ['Starts the bot up after the /stop comamnd has been call
                         'Clears any cache arrays present',
                         'Returns the debugging log file (personal information still saved in this version of the bot)',
                         'Returns a random result from the specified live leak search',
-                        'Returns the specified number (default 5) of the latest articles from the MyBroadband website']
+                        'Returns the specified number (default 5) of the latest articles from the MyBroadband website',
+                        'Pulls a random image from 4chan.org/b (use at own peril)']

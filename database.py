@@ -70,7 +70,7 @@ class RegisterDB:
                 clashes_query = """SELECT 1 FROM Chats WHERE ChatID=? AND RegID=?"""
 
         except pyodbc.Error as e:
-            log('RegisterDB.__init__()', 'failed to open db')
+            log('RegisterDB.__init__()', 'failed to open db', True)
             raise
 
     def check_for_table(self):
@@ -116,7 +116,7 @@ class RegisterDB:
     def exists(self, uuid):
         self.cursor = self.db.cursor()
 
-        log("RegisterDB.exists()", "Checking if user exists RegIDs in table ")  #: " + str(uuid))
+        log("RegisterDB.exists()", "Checking if user exists RegIDs in table")  #: " + str(uuid))
 
         values = (str(uuid),)
 
@@ -127,7 +127,7 @@ class RegisterDB:
                 return True
 
         except pyodbc.DataError as d:
-            log("RegisterDB.exists()", "Truncating string error")
+            log("RegisterDB.exists()", "Truncating string error", True)
 
         self.cursor.close()
         self.db.commit()
@@ -137,7 +137,7 @@ class RegisterDB:
     def user_exists(self, chatid):
         self.cursor = self.db.cursor()
 
-        # private information in the blog
+        # private information in the log
         # log("RegisterDB.user_exists()", "Checking if exists Chats in table: " + str(chatid))
 
         values = (str(chatid),)
@@ -150,9 +150,9 @@ class RegisterDB:
                 return True
 
         except pyodbc.DataError as d:
-            log("RegisterDB.user_exists()", "Data error")
+            log("RegisterDB.user_exists()", "Data error", True)
         except:
-            log("")
+            log('RegisterDB.user_exists()', 'Unspecified exception caught', True)
             pass
 
         self.cursor.close()
@@ -163,8 +163,7 @@ class RegisterDB:
     def clashes(self, chatid, regid):
         self.cursor = self.db.cursor()
 
-        log("RegisterDB.clashes()", "Checking if exists RegIDs in Chats table: "
-            + str(chatid) + " " + str(regid))
+        log("RegisterDB.clashes()", "Checking if exists RegIDs in Chats table")
 
         values = (str(chatid), str(regid),)
 
@@ -175,10 +174,9 @@ class RegisterDB:
                 return True
 
         except pyodbc.DataError as d:
-            log("RegisterDB.clashes()", "Data error")
+            log("RegisterDB.clashes()", "Data error", True)
 
         self.cursor.close()
-
         return False
 
 

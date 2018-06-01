@@ -14,18 +14,17 @@ create_if_not_exists_query = ("CREATE TABLE IF NOT EXISTS `RegIDs` ("
 
 
 def generate(count):
+    global insert_query
 
     cryptogen = SystemRandom()
-    hash = None
 
-    database = None
     if is_windows():
         database = connector.connect(**connection_string())
     else:
         database = pyodbc.connect(connection_string())
+        insert_query = """INSERT INTO RegIDs (RegID) VALUES (?)"""
 
     check_for_table(database)
-
     cursor = database.cursor()
 
     randValues = [[cryptogen.randrange(MAX_RAN_GEN) for j in range(2)] for i in range(count)]

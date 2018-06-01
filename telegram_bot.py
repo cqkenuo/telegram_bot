@@ -1,13 +1,16 @@
 import time
 
 import telepot
+from telepot.delegate import pave_event_space, per_chat_id, create_open
 from telepot.loop import MessageLoop
 
-from bot import Bot, messages, articles_comparison
+from bot import Bot, clear_cache, articles_comparison
 from log import log, config, clear_logs
 
-bot = telepot.Bot(config["token"])
-b = Bot(bot)
+bot = telepot.DelegatorBot(config["token"], [
+    pave_event_space()(
+        per_chat_id(), create_open, Bot, timeout=10),
+])
 
 
 class SignalProcess:
@@ -23,15 +26,13 @@ class SignalProcess:
         self.kill_now = True
 
 
-def run(sleep_time=0.2):
+def run(sleep_time=0.5):
     clear_logs()
 
     log("run()", "Starting message loop")
-    b.start()
 
     start_time = time.time()
-
-    MessageLoop(bot, handle_messages).run_as_thread()
+    MessageLoop(bot).run_as_thread()
     sig = SignalProcess()
 
     while True:
@@ -41,29 +42,9 @@ def run(sleep_time=0.2):
             os.kill(os.getpid(), 0)
 
         if (time.time() - start_time >= 3600) and (not articles_comparison()):
-            log("run()", "Clearing cache on the hour")
+            log("run()", "Clearing cache (hourly)")
             start_time = time.time()
-            b.clear_cache(None)
+            clear_cache()
 
         time.sleep(sleep_time)
 
-
-def handle_messages(msg):
-    global b
-
-    # if msg['text'] == str("/terminate " + config["terminate_val"]):
-    #     os.kill(os.getpid(), 0)
-
-    if not b.running and msg['text'] == '/start':
-
-        log("handle_messages()", "Starting bot")
-
-        if msg['text'] == "/start":
-            b = Bot(bot)
-            b.start()
-
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        bot.sendMessage(chat_id, "Bot starting up...")
-
-    else:
-        messages.append(msg)
