@@ -1,10 +1,7 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from log import config
 from urllib.parse import unquote
 from selenium import webdriver
-
-API_KEY = config['gapi_key']
 
 
 def search(search_key):
@@ -66,9 +63,7 @@ def my_bb():
     url = 'https://www.mybroadband.co.za/news'
 
     driver = get_chrome_driver(url)
-
     parsed = BeautifulSoup(str(driver.find_element_by_class_name('feed_article_container').get_attribute('innerHTML')), 'lxml')
-
     results = parsed.findAll('a', attrs={'class': 'post-thumbnail'})
 
     articles = []
@@ -97,6 +92,15 @@ def get_chrome_driver(url):
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
     driver = webdriver.Chrome(chrome_options=options)
+    driver.get(url)
+
+    return driver
+
+
+def get_firefox_driver(url):
+    options = webdriver.FirefoxOptions()
+    options.add_argument('--headless')
+    driver = webdriver.Firefox(firefox_options=options)
     driver.get(url)
 
     return driver

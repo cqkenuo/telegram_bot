@@ -1,9 +1,7 @@
 {
   "token": "<Telegram Bot Api key>",
   "log_file": "./insert_log.txt",
-  "write_to_log_file": false,
   "terminate_val": "<Terminate hash value>",
-  "gapi_key": "<Google search API key>",
 
   "db_host": "<server ip address>",
   "db_port": "<server port>",

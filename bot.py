@@ -9,7 +9,6 @@ from database import RegisterDB, is_windows
 from log import log, config, LOG_FILE
 from search import search, r34, live_leak, my_bb
 
-monitor_cmd_call = "python wifi-monitor.py -j"
 default_port_range = '22-5000'
 
 messages = []
@@ -42,10 +41,9 @@ class Bot(threading.Thread):
 
     def run(self):
         while self.running:
-            for m in messages:
-                self.handle_message(m)
-                # print("handling message: " + str(m))
-                messages.remove(m)
+            for message in messages:
+                threading.Thread(target=self.handle_message(message)).start()
+                messages.remove(message)
 
             if len(results) > 1000:
                 results.clear()
@@ -54,13 +52,12 @@ class Bot(threading.Thread):
             time.sleep(0.2)
 
         # wait for all threads to stop
-        time.sleep(5)
+        time.sleep(2)
         self.stop()
 
     def stop(self):
         self.running = False
-        spammers.clear()
-        messages.clear()
+        self.clear_cache(None)
         log("Bot.stop()", "Bot stopping...")
 
     def handle_message(self, msg):
@@ -72,7 +69,7 @@ class Bot(threading.Thread):
 
         try:
             if str(msg['text']).split(" ")[0] in bot_commands:
-                threading.Thread(target=self.parse_command(msg['text'], chat_id)).start()
+                self.parse_command(msg['text'], chat_id)
             elif content_type == 'text' and msg['text']:
                 # self.bot.sendMessage(chat_id, msg['text'])
                 if chat_id not in spammers:
@@ -80,7 +77,7 @@ class Bot(threading.Thread):
                 else:
                     self.bot.sendMessage(chat_id, "Please stop spamming")
         except:
-            traceback.print_exc()
+            log('Bot.handle_message()', 'Unspecified exception caught', True)
             pass
 
     def parse_command(self, cmd, chatid):
@@ -196,9 +193,8 @@ class Bot(threading.Thread):
             prev_commands[chatid] = str(cmd + " " + msg)
 
         except:
-            log("parse_command()", "Unspecified exception caught")
+            log("parse_command()", "Unspecified exception caught", True)
             self.bot.sendMessage(chatid, "Unspecified exception occurred")
-            traceback.print_exc()
             pass
 
     def scan(self, msg, chatid):
@@ -285,7 +281,7 @@ class Bot(threading.Thread):
 
             self.bot.sendDocument(chatid, f)
         except:
-            log("Bot.trace()", "Unspecified error")
+            log("Bot.trace()", "Unspecified error", True)
             raise
 
         if not m:

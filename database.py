@@ -21,12 +21,12 @@ enable_warnings_query = "SET sql_notes = 1;"
 
 # MySQL connection string
 connection_string_mysql_linux = ("DRIVER={MySQL ODBC 5.1 Driver};"
-                                 "SERVER=" + config['db_host'] + ";"
-                                 "DATABASE=" + config['db_name'] + ";"
-                                 "PORT=" + config['db_port'] + ";"
-                                 "USER=" + config['db_user'] + ";"
-                                 "PASSWORD=" + config['db_pass'] + ";"
-                                 "OPTION=3;")
+                                 + "SERVER=" + config['db_host'] + ";"
+                                 + "DATABASE=" + config['db_name'] + ";"
+                                 + "PORT=" + config['db_port'] + ";"
+                                 + "USER=" + config['db_user'] + ";"
+                                 + "PASSWORD=" + config['db_pass'] + ";"
+                                 + "OPTION=3;")
 
 connection_string_mysql_win = {
     'user': config['db_user'],
@@ -60,8 +60,14 @@ class RegisterDB:
                 self.db = pyodbc.connect(connection_string_mysql_linux)
 
             self.cursor = None
-
             self.check_for_table()
+
+            if not is_windows():
+                global insert_query, user_exists_query, exists_query, clashes_query
+                insert_query = """INSERT INTO Chats (ChatID,RegID) VALUES (?,?)"""
+                exists_query = """SELECT 1 FROM RegIDs WHERE RegID=?"""
+                user_exists_query = """SELECT 1 FROM Chats WHERE ChatID=?"""
+                clashes_query = """SELECT 1 FROM Chats WHERE ChatID=? AND RegID=?"""
 
         except pyodbc.Error as e:
             log('RegisterDB.__init__()', 'failed to open db')
@@ -76,7 +82,7 @@ class RegisterDB:
         try:
             self.cursor.execute(create_if_not_exists_query)
         except (pyodbc.DataError, pyodbc.ProgrammingError):
-            log("insert()", "Truncated string or ProgrammingError")
+            log("insert()", "Truncated string or ProgrammingError", True)
             raise
 
         # Re-enable warnings
@@ -91,15 +97,15 @@ class RegisterDB:
     def insert(self, chatid, uuid):
         self.cursor = self.db.cursor()
 
-        log("RegisterDB.insert()", "Inserting into table: "
-            + str(chatid) + " " + str(uuid))
+        log("RegisterDB.insert()", "Inserting user into table")
+        #     + str(chatid) + " " + str(uuid))
 
         values = (str(chatid), str(uuid),)
 
         try:
             self.cursor.execute(insert_query, values)
         except (pyodbc.DataError, pyodbc.IntegrityError) as d:
-            log("RegisterDB.insert()", "Statement error")
+            log("RegisterDB.insert()", "Statement error", True)
             pass
         except:
             pass
@@ -110,7 +116,7 @@ class RegisterDB:
     def exists(self, uuid):
         self.cursor = self.db.cursor()
 
-        log("RegisterDB.exists()", "Checking if exists RegIDs in table: " + str(uuid))
+        log("RegisterDB.exists()", "Checking if user exists RegIDs in table ")  #: " + str(uuid))
 
         values = (str(uuid),)
 
@@ -131,7 +137,8 @@ class RegisterDB:
     def user_exists(self, chatid):
         self.cursor = self.db.cursor()
 
-        log("RegisterDB.user_exists()", "Checking if exists Chats in table: " + str(chatid))
+        # private information in the blog
+        # log("RegisterDB.user_exists()", "Checking if exists Chats in table: " + str(chatid))
 
         values = (str(chatid),)
 
@@ -145,7 +152,7 @@ class RegisterDB:
         except pyodbc.DataError as d:
             log("RegisterDB.user_exists()", "Data error")
         except:
-            traceback.print_exc()
+            log("")
             pass
 
         self.cursor.close()
@@ -159,7 +166,7 @@ class RegisterDB:
         log("RegisterDB.clashes()", "Checking if exists RegIDs in Chats table: "
             + str(chatid) + " " + str(regid))
 
-        values = (str(chatid), str(regid), )
+        values = (str(chatid), str(regid),)
 
         try:
             self.cursor.execute(clashes_query, values)
