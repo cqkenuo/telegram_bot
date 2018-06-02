@@ -29,6 +29,7 @@ def clear_logs():
         import os
         os.remove(LOG_FILE)
     except (OSError, FileNotFoundError):
+        log('log.py.clear_logs()', 'Could not delete log file', True)
         pass
 
 
@@ -39,4 +40,4 @@ def write_to_file(file, text):
 
 
 if __name__ == "__main__":
-    log('jew()', 'jew2')
+    log('', '', True)

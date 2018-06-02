@@ -1,6 +1,6 @@
 {
   "token": "<Telegram Bot Api key>",
-  "log_file": "./insert_log.txt",
+  "log_file": "./debug.log",
 
   "db_host": "<server ip address>",
   "db_port": "<server port>",

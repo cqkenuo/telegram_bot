@@ -79,9 +79,6 @@ class Bot(telepot.helper.ChatHandler):
 
                 msg = msg.strip()
                 cmd = split_arr[0]
-
-                # log("Bot.parse_command()", "msg: " + msg)
-
             except IndexError:
                 pass
 
@@ -132,6 +129,10 @@ class Bot(telepot.helper.ChatHandler):
                 elif cmd == bot_commands[13].lower():
                     self.chanb()
 
+                # /dns
+                elif cmd == bot_commands[14].lower():
+                    self.dns(msg)
+
                 # Admin-only commands
                 elif self.db.user_exists(chatid):
 
@@ -171,7 +172,7 @@ class Bot(telepot.helper.ChatHandler):
 
         except:
             log("parse_command()", "Unspecified exception caught", True)
-            self.sendMessage("Unspecified exception occurred")
+            self.sender.sendMessage("Unspecified exception occurred")
             pass
 
     def scan(self, msg):
@@ -377,3 +378,15 @@ class Bot(telepot.helper.ChatHandler):
         articles.clear()
 
         self.sender.sendMessage("Local cache cleared")
+
+    def dns(self, msg):
+        from dns import resolver
+
+        res = resolver.Resolver()
+        res.nameservers = ['8.8.8.8']
+
+        message = ''
+        for rdata in res.query(str(msg)):
+            message += rdata.address + '\n'
+
+        self.sender.sendMessage(message)

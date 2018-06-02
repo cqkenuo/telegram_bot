@@ -1,6 +1,5 @@
 import pyodbc
 import sys
-import traceback
 
 from log import log, config
 from mysql import connector
@@ -177,6 +176,7 @@ class RegisterDB:
             log("RegisterDB.clashes()", "Data error", True)
 
         self.cursor.close()
+        self.db.commit()
         return False
 
 

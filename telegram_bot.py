@@ -35,10 +35,12 @@ def run(sleep_time=0.5):
     MessageLoop(bot).run_as_thread()
     sig = SignalProcess()
 
-    while True:
+    running = True
+    while running:
         if sig.kill_now:
             import os
             log("run()", "SIGTERM or kill called on process. Exiting now...")
+            running = False
             os.kill(os.getpid(), 0)
 
         if (time.time() - start_time >= 3600) and (not articles_comparison()):

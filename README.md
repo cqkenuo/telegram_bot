@@ -2,8 +2,6 @@
 
 This is a personalized telegram bot with the following commands available to users: 
 
-- /start: Starts the bot up after the /stop comamnd has been called. Cannot start the bot if the script is not running
-- /stop: Stops the bot if it is running
 - /scan: Performs a port scan on the specified address passed as a parameter i.e. /scan <ip address>
 - /monitor: Sniffs the packets on the host machine running the script. Packet count to return is an optional parameter i.e. /monitor <number>
 - /arp: Performs a network scan for all the devices connected to the script hosts network
@@ -15,6 +13,10 @@ This is a personalized telegram bot with the following commands available to use
 - /r34: Performs an r34 search for the provided search term
 - /clear: Clears any cache arrays present
 - /log: Returns the debugging log file (personal information still saved in this version of the bot)
+- /live: Returns a random result from the specified live leak search
+- /mybb: Returns the specified number (default 5) of the latest articles from the MyBroadband website
+- /b: Pulls a random image from 4chan.org/b (use at own peril)
+- /dns: Performs a DNS lookup on the provided hostname
 
 ## Example usage (commandline): 
 
