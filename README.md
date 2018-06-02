@@ -27,7 +27,7 @@ The LaTeX packages can be found at [LaTeX](https://www.latex-project.org/get/#te
 
 2. Install the required packages: `pip install -r requirements.txt --upgrade`
 
-3. Run the following in console / terminal: `python test_bot`
+3. Run the following in console / terminal: `python test_bot.py`
 
 4. Then in telegram open the chat link: [telegram_bot](t.me/thotman_test_bot)
 

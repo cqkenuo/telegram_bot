@@ -7,6 +7,7 @@ config = json.load(open(CONFIG_FILE, "r"))
 
 # Log file directory
 LOG_FILE = config["log_file"]
+LOG_BACKUPS = 'logs/'
 
 logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)
 
@@ -27,7 +28,16 @@ def log(origin, message, is_exception=False):
 def clear_logs():
     try:
         import os
-        os.remove(LOG_FILE)
+        from shutil import copyfile
+
+        if not os.path.exists(LOG_BACKUPS):
+            os.makedirs(LOG_BACKUPS)
+
+        date = datetime.now().strftime('[%d-%m-%Y]')
+        copyfile(LOG_FILE, '{}{}_{}'.format(LOG_BACKUPS, date, str(LOG_FILE)[2:]))
+
+        with open(LOG_FILE, 'w'):
+            pass
     except (OSError, FileNotFoundError):
         log('log.py.clear_logs()', 'Could not delete log file', True)
         pass
