@@ -188,7 +188,7 @@ class Bot(telepot.helper.ChatHandler):
             prev_commands[chatid] = str(cmd + " " + msg)
 
         except:
-            log("parse_command()", "Unspecified exception caught \nMSG: {}".format(msg), True)
+            log("parse_command()", "Unspecified exception caught", True)
             self.sender.sendMessage("Unspecified exception occurred")
             pass
 
@@ -353,9 +353,9 @@ class Bot(telepot.helper.ChatHandler):
 
     def search(self, msg):
         if msg not in searches:
-            searches.append(msg)
             images = search(msg)
             results[msg] = images
+            searches.append(msg)
         else:
             images = results[msg]
 

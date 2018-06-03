@@ -46,9 +46,10 @@ def run(sleep_time=0.5):
             os.kill(os.getpid(), 0)
 
         if (time.time() - start_time >= 3600) and (not articles_comparison()):
-            log("run()", "Clearing cache (hourly)")
+            log("run()", "Clearing cache and resetting log file (hourly)")
             start_time = time.time()
             clear_cache()
+            clear_logs()
 
         time.sleep(sleep_time)
 
