@@ -1,5 +1,6 @@
 bot_commands = ["/scan", "/monitor", "/arp", "/prev", "/trace", "/reg", "/help",
-                "/img", "/r34", "/clear", "/log", "/live", "/mybb", "/b", "/dns"]
+                "/img", "/r34", "/clear", "/log", "/live", "/mybb", "/b", "/dns",
+                "/logs", "/clear_logs"]
 
 restricted_commands = ["/monitor", "/arp", "/trace", "/clear"]
 
@@ -18,4 +19,6 @@ command_descriptions = ['Performs a port scan on the specified address passed as
                         'Returns a random result from the specified live leak search',
                         'Returns the specified number (default 5) of the latest articles from the MyBroadband website',
                         'Pulls a random image from 4chan.org/b (use at own peril)',
-                        'Performs a DNS lookup on the provided hostname']
+                        'Performs a DNS lookup on the provided hostname',
+                        'Returns the backed-up log files',
+                        'Deletes the backed up log files']

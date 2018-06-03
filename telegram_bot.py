@@ -5,7 +5,7 @@ from telepot.delegate import pave_event_space, per_chat_id, create_open
 from telepot.loop import MessageLoop
 
 from bot import Bot, clear_cache, articles_comparison
-from log import log, config, clear_logs
+from log import log, config, clear_logs, logging, LOG_FILE
 
 bot = telepot.DelegatorBot(config["token"], [
     pave_event_space()(
@@ -28,6 +28,8 @@ class SignalProcess:
 
 def run(sleep_time=0.5):
     clear_logs()
+
+    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)
 
     log("run()", "Starting message loop")
 

@@ -6,7 +6,7 @@ from scapy.all import *
 
 from commands import bot_commands, command_descriptions, restricted_commands
 from database import RegisterDB, is_windows
-from log import log, config, LOG_FILE
+from log import log, LOG_FILE, LOG_BACKUPS
 from search import search, r34, live_leak, my_bb, chan
 
 default_port_range = '22-5000'
@@ -25,6 +25,7 @@ articles = []
 
 PACKETS_FILE = 'packets'
 TRACE_ROUTE_FILE = 'traceroute'
+MAX_MESSAGE_LENGTH = 4095
 
 
 def clear_cache():
@@ -49,9 +50,13 @@ class Bot(telepot.helper.ChatHandler):
 
     def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
+        command = str(msg['text']).split(" ")[0].lower()
 
         try:
-            if str(msg['text']).split(" ")[0] in bot_commands:
+            if command == "/clear_logs" and chat_id in spammers:
+                self.sender.sendMessage("Please stop spamming")
+                return
+            elif command in bot_commands:
                 Thread(target=self.parse_command, args=(msg['text'], chat_id,)).start()
                 # self.parse_command(msg['text'], chat_id)
             elif content_type == 'text' and msg['text']:
@@ -65,9 +70,9 @@ class Bot(telepot.helper.ChatHandler):
             pass
 
     def parse_command(self, cmd, chatid):
+        msg = ''
         try:
             cmd = str(cmd).lower()
-            msg = ""
             try:
                 split_arr = cmd.split(" ")
 
@@ -100,6 +105,10 @@ class Bot(telepot.helper.ChatHandler):
 
                 # /reg
                 elif cmd == bot_commands[5].lower():
+                    # add to spammers
+                    if chatid not in spammers:
+                        spammers.append(chatid)
+
                     if not self.db.user_exists(chatid) and not self.db.clashes(chatid, msg):
                         self.register(chatid, msg)
                     else:
@@ -162,6 +171,14 @@ class Bot(telepot.helper.ChatHandler):
                             self.sender.sendMessage("Log file could not be opened...")
                             pass
 
+                    # /logs
+                    elif cmd == bot_commands[15].lower():
+                        self.send_logs()
+
+                        # /logs
+                    elif cmd == bot_commands[16].lower():
+                        self.clear_logs()
+
                 elif cmd in restricted_commands:
                     self.sender.sendMessage('Insufficient privileges to run this command')
 
@@ -171,7 +188,7 @@ class Bot(telepot.helper.ChatHandler):
             prev_commands[chatid] = str(cmd + " " + msg)
 
         except:
-            log("parse_command()", "Unspecified exception caught", True)
+            log("parse_command()", "Unspecified exception caught \nMSG: {}".format(msg), True)
             self.sender.sendMessage("Unspecified exception occurred")
             pass
 
@@ -189,7 +206,7 @@ class Bot(telepot.helper.ChatHandler):
         if port_max:
             ports = port_max
 
-        message = ""
+        message = ''
 
         self.sender.sendMessage("Starting nmap scan: \nhost: " + msg
                                 + "\nports: " + ports)
@@ -201,20 +218,24 @@ class Bot(telepot.helper.ChatHandler):
 
         for host in nm.all_hosts():
 
-            message += '----------------------------------------------------\n'
+            message += '\n\n----------------------------------------------------\n'
             message += 'Host : %12s (%s)' % (host, nm[host].hostname()) + '\n'
             message += 'State : %12s' % nm[host].state() + '\n'
 
             for proto in nm[host].all_protocols():
                 message += '----------\n'
+                message += 'Protocol : {}\n'.format(proto)
 
-                message += 'Protocol : %s' % proto + "\n"
+                col_width = max(len(str(nm[host][proto][row]['name'])) for row in nm[host][proto].keys()) + 4  # padding
 
-                lport = nm[host][proto].keys()
-                # lport.sort()
-                for port in lport:
+                message += '\n{} \t {} \t\t {}\n'.format('Port: '.ljust(col_width), 'State: '.ljust(col_width),
+                                                         'Name: '.ljust(col_width))
+                message += '====================================\n'
+
+                for port in nm[host][proto].keys():
                     p = nm[host][proto][port]
-                    message += 'port: %12s \t state: %12s \t\t name: %12s' % (port, p['state'], p['name']) + "\n"
+                    message += '{} \t {} \t\t {}\n'.format(str(port).ljust(col_width), str(p['state']).ljust(col_width),
+                                                           str(p['name']).ljust(col_width))
 
         if not message:
             message = "No results returned..."
@@ -227,28 +248,41 @@ class Bot(telepot.helper.ChatHandler):
         nm = nmap.PortScanner()  # instantiate nmap.PortScanner object
         nm.scan(hosts=str(str(msg) + "/24"), arguments='-sP')  # ( -PE -PA21,23,80,135,3389,27036)   scan host
 
-        # log("Bot.scan()", "hosts: " + str(nm.all_hosts()))
-
         hosts_list = [(x, nm[x]['status']['state']) for x in nm.all_hosts()]
 
         col_width = max(len(str(row)) for row in hosts_list) + 4  # padding
-        log('Bot.arp()', "col_width: " + str(col_width))
-        message = "{:} {:}".format("Host".ljust(col_width), "Status".ljust(col_width))
-        message += "\n===============================\n"
+
+        message = "{} {} {}".format("Host".ljust(col_width), "Status".ljust(col_width), 'Host'.ljust(col_width))
+        message += "\n=======================================\n"
 
         for host, status in hosts_list:
-            message += str('{:} {:}'.format(str(host + ':').ljust(col_width), str(status).ljust(col_width))) + '\n'
+            message += str('{} {} {}\n'.format(str(host + ':').ljust(col_width), str(status).ljust(col_width),
+                                               str(nm[host].hostname()).ljust(col_width)))
 
         if not message:
             message = "No results returned..."
 
-        self.sender.sendMessage(str(message + "\n"))
+        if len(message) >= MAX_MESSAGE_LENGTH:
+            mess = []
+
+            while len(message) >= MAX_MESSAGE_LENGTH:
+                end_point = (MAX_MESSAGE_LENGTH-250) + message.find('\n')
+                mess.append(message[0:end_point])
+                message = message[end_point+1:]     # remove first 4k bytes
+
+            if message:
+                mess.append(message)
+
+            for i in mess:
+                self.sender.sendMessage(i)
+
+        else:
+            self.sender.sendMessage(str(message))
 
     def trace(self, msg):
         from scapy.layers.inet import traceroute
 
         self.sender.sendMessage("Starting traceroute to: " + msg)
-        m = ""
 
         try:
             # log("Bot.trace()", "msg: \"" + msg + "\"")
@@ -262,31 +296,38 @@ class Bot(telepot.helper.ChatHandler):
             log("Bot.trace()", "Unspecified error", True)
             raise
 
-        if not m:
-            m = "No results returned "
-
-        self.sender.sendMessage(m)
-
     def sniff_packets(self, msg):
         try:
             os.remove(str('./' + PACKETS_FILE + '.pdf'))
         except (OSError, FileNotFoundError):
             pass
 
-        if not msg or not str(msg).isnumeric():
-            msg = 5
+        msg = str(msg).lower()
+        target = ''
+        try:
+            split_arr = msg.split(" ")
+            msg = split_arr[0]
+            target = split_arr[1]
+        except IndexError:
+            pass
 
-        filter_str = "icmp and host"  # 'ip 137.215.98.24'
+        count = 5
+        if msg and str(msg).isnumeric():
+            count = int(msg)
+
+        filter_str = 'icmp and host {}'.format(target)  # 'ip 137.215.98.24'
         if is_windows():
-            res = sniff(filter=filter_str, count=int(msg))
+            res = sniff(filter=filter_str, count=count)
         else:
-            res = sniff(iface='wlx7c8bca1c000a', filter=filter_str, count=int(msg))
+            res = sniff(iface='wlx7c8bca1c000a', filter=filter_str, count=count)
 
         res.pdfdump(PACKETS_FILE)
 
         f = open(str('./' + PACKETS_FILE + '.pdf'), 'rb')
-
-        self.sender.sendDocument(f)
+        if f:
+            self.sender.sendDocument(f)
+        else:
+            self.sender.sendMessage('No results returned...')
 
     def register(self, chatid, msg):
         log("Bot.register()", "Confirming whether user is registered")
@@ -384,9 +425,35 @@ class Bot(telepot.helper.ChatHandler):
 
         res = resolver.Resolver()
         res.nameservers = ['8.8.8.8']
+        data = res.query(str(msg), 'A')
 
         message = ''
-        for rdata in res.query(str(msg)):
-            message += rdata.address + '\n'
+        if data:
+            for rdata in data:
+                message += str(rdata) + '\n'
 
-        self.sender.sendMessage(message)
+            self.sender.sendMessage(message)
+        else:
+            self.sender.senMessage('No results returned...')
+
+    def send_logs(self):
+        from os import walk, path
+
+        found = False
+
+        for (dirpath, dirnames, filenames) in walk(LOG_BACKUPS):
+            for filename in filenames:
+                if filename.endswith('.log'):
+                    f = open(path.join(dirpath, filename), 'r')
+                    self.sender.sendDocument(f)
+                    f.close()
+                    found = True
+
+        if not found:
+            self.sender.sendMessage('No backed-up log files found')
+
+    def clear_logs(self):
+        from shutil import rmtree
+        rmtree(LOG_BACKUPS)
+
+        self.sender.sendMessage('Backed up log files deleted')

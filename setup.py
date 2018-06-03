@@ -1,7 +1,7 @@
 import sys
 from cx_Freeze import setup, Executable
 import os
-
+import pyx.normpath
 PYTHON_INSTALL_DIR = os.path.dirname(os.path.dirname(os.__file__))
 os.environ['TCL_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
@@ -11,7 +11,17 @@ base = None
 
 buildOptions = dict(
     packages=['test_bot'],
-    includes=['selenium', 'nmap', 'telepot',
+    includes=['selenium', 'nmap', 'telepot', 'pyx', 'pyx.attr',
+              'pyx.box', 'pyx.bitmap', 'pyx.mesh', 'pyx.canvas',
+              'pyx.color', 'pyx.text', 'pyx.config', 'pyx.bbox',
+              'pyx.writer', 'pyx.reader', 'pyx.baseclasses',
+              'pyx.connector', 'pyx.pdfwriter', 'pyx.pdfextra',
+              'pyx.style', 'pyx.graph', 'pyx.font', 'pyx.document',
+              'pyx.deformer', 'pyx.svgfile', 'pyx.svgwriter',
+              'pyx.graph.data', 'pyx.graph.style', 'pyx.graph.key',
+              'pyx.graph.graph', 'pyx.graph.axis.axis',
+              'pyx.graph.axis.painter', 'pyx.pattern',
+              'pyx.normpath',
               'pyodbc', 'bs4', 'mysql', 'scapy'],
     include_files=['chromedriver.exe', 'config.json'],
     excludes=[])
