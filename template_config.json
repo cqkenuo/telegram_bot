@@ -1,6 +1,9 @@
 {
   "token": "<Telegram Bot Api key>",
   "log_file": "./debug.log",
+  "log_backup_dir": "logs/",
+  "cache_clear_interval": 10800,
+  "debugging": true,
 
   "db_host": "<server ip address>",
   "db_port": "<server port>",

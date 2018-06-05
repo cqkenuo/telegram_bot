@@ -7,7 +7,7 @@ config = json.load(open(CONFIG_FILE, "r"))
 
 # Log file directory
 LOG_FILE = config["log_file"]
-LOG_BACKUPS = 'logs/'
+LOG_BACKUPS = config['log_backup_dir']
 
 
 def log(origin, message, is_exception=False):
@@ -20,7 +20,8 @@ def log(origin, message, is_exception=False):
         else:
             logging.debug(message)
 
-        print(message)
+        if config['debugging']:
+            print(message)
 
 
 def clear_logs():

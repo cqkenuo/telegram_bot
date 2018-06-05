@@ -26,6 +26,7 @@ articles = []
 PACKETS_FILE = 'packets'
 TRACE_ROUTE_FILE = 'traceroute'
 MAX_MESSAGE_LENGTH = 4095
+MAX_MESSAGE_LENGTH_OFFSET = MAX_MESSAGE_LENGTH-150
 
 
 def clear_cache():
@@ -37,8 +38,10 @@ def clear_cache():
     articles.clear()
 
 
-def articles_comparison():
-    return articles[0:5] == my_bb()[0:5]
+# Caches the MyBroadband articles
+def load_articles():
+    global articles
+    articles = my_bb()
 
 
 class Bot(telepot.helper.ChatHandler):
@@ -266,7 +269,7 @@ class Bot(telepot.helper.ChatHandler):
             mess = []
 
             while len(message) >= MAX_MESSAGE_LENGTH:
-                end_point = (MAX_MESSAGE_LENGTH-250) + message.find('\n')
+                end_point = message.find('\n', MAX_MESSAGE_LENGTH_OFFSET)
                 mess.append(message[0:end_point])
                 message = message[end_point+1:]     # remove first 4k bytes
 
@@ -424,17 +427,24 @@ class Bot(telepot.helper.ChatHandler):
         from dns import resolver
 
         res = resolver.Resolver()
-        res.nameservers = ['8.8.8.8']
-        data = res.query(str(msg), 'A')
+        res.nameservers = ['8.8.8.8', '8.8.4.4']
 
-        message = ''
-        if data:
-            for rdata in data:
-                message += str(rdata) + '\n'
+        try:
+            myAnswers = resolver.query(str(msg), 'A')
 
-            self.sender.sendMessage(message)
-        else:
-            self.sender.senMessage('No results returned...')
+            message = ''.encode('utf-8')
+            if myAnswers:
+                for rdata in myAnswers:
+                    message += str(str(rdata) + '\n').encode('utf-8')
+
+                self.sender.sendMessage(message.decode('utf-8'))
+            else:
+                self.sender.sendMessage('No results returned...')
+
+        except:
+            log('Bot.dns', 'Unspecified error', True)
+            self.sender.sendMessage('Query failed')
+            pass
 
     def send_logs(self):
         from os import walk, path

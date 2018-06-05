@@ -1,7 +1,7 @@
 import sys
 from cx_Freeze import setup, Executable
 import os
-import pyx.normpath
+
 PYTHON_INSTALL_DIR = os.path.dirname(os.path.dirname(os.__file__))
 os.environ['TCL_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
@@ -21,7 +21,7 @@ buildOptions = dict(
               'pyx.graph.data', 'pyx.graph.style', 'pyx.graph.key',
               'pyx.graph.graph', 'pyx.graph.axis.axis',
               'pyx.graph.axis.painter', 'pyx.pattern',
-              'pyx.normpath',
+              'pyx.normpath', 'dns', 'dns.resolver',
               'pyodbc', 'bs4', 'mysql', 'scapy'],
     include_files=['chromedriver.exe', 'config.json'],
     excludes=[])
