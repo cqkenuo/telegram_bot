@@ -19,13 +19,16 @@ This is a personalized telegram bot with the following commands available to use
 - /dns: Performs a DNS lookup on the provided hostname
 - /logs: Returns the backed-up log files (admin-only)
 - /clear_logs: Deletes the backed up log files (admin-only)
+- /stats: Returns the current cpu and memory use statistics of the host (admin-only)
+
+The bot was designed to keep running through most exceptions during runtime (apart from missing database or networking errors)
 
 ## Example usage (commandline): 
 
 #### Requirements
 ##### Note: As this bot uses the PyX package to create pdf dumps, a form of the LaTeX software package needs to be installed
 - The LaTeX packages can be found at [LaTeX](https://www.latex-project.org/get/#tex-distributions)
-- An already set-up instance of MySQL needs to be running for this bot to work
+- An already set-up instance of MySQL needs to be running for this bot to work (needs a database named `test`)
 
 #### Steps
 1. Modify the `template_config.json` to suit your setup and rename to `config.json`
@@ -34,7 +37,7 @@ This is a personalized telegram bot with the following commands available to use
 
 3. Run the following in console / terminal: `python test_bot.py`
 
-4. Then in telegram open the chat link: [telegram_bot](t.me/thotman_test_bot)
+4. Then in telegram open the chat link: [telegram_bot](https://t.me/thotman_test_bot)
 
 ## Example usage in code
 ```python

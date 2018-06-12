@@ -63,6 +63,7 @@ def run(sleep_time=0.5):
             load_articles()
 
             # Reset log file and copy the previous one to the backup directory
+            # Keeps log files from becoming too big
             clear_logs()
 
         time.sleep(sleep_time)

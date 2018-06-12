@@ -8,6 +8,7 @@ from commands import bot_commands, command_descriptions, restricted_commands
 from database import RegisterDB, is_windows
 from log import log, LOG_FILE, LOG_BACKUPS
 from search import search, r34, live_leak, my_bb, chan
+from util import get_pc_stats
 
 default_port_range = '22-5000'
 
@@ -26,7 +27,7 @@ articles = []
 PACKETS_FILE = 'packets'
 TRACE_ROUTE_FILE = 'traceroute'
 MAX_MESSAGE_LENGTH = 4095
-MAX_MESSAGE_LENGTH_OFFSET = MAX_MESSAGE_LENGTH-150
+MAX_MESSAGE_LENGTH_OFFSET = MAX_MESSAGE_LENGTH - 150
 
 
 def clear_cache():
@@ -178,9 +179,13 @@ class Bot(telepot.helper.ChatHandler):
                     elif cmd == bot_commands[15].lower():
                         self.send_logs()
 
-                        # /logs
+                    # /logs
                     elif cmd == bot_commands[16].lower():
                         self.clear_logs()
+
+                    # /stats
+                    elif cmd == bot_commands[17].lower():
+                        self.stats()
 
                 elif cmd in restricted_commands:
                     self.sender.sendMessage('Insufficient privileges to run this command')
@@ -271,7 +276,7 @@ class Bot(telepot.helper.ChatHandler):
             while len(message) >= MAX_MESSAGE_LENGTH:
                 end_point = message.find('\n', MAX_MESSAGE_LENGTH_OFFSET)
                 mess.append(message[0:end_point])
-                message = message[end_point+1:]     # remove first 4k bytes
+                message = message[end_point + 1:]  # remove first 4k bytes
 
             if message:
                 mess.append(message)
@@ -448,18 +453,25 @@ class Bot(telepot.helper.ChatHandler):
 
     def send_logs(self):
         from os import walk, path
+        from zipfile import ZipFile
 
         found = False
 
         for (dirpath, dirnames, filenames) in walk(LOG_BACKUPS):
-            for filename in filenames:
-                if filename.endswith('.log'):
-                    f = open(path.join(dirpath, filename), 'r')
-                    self.sender.sendDocument(f)
-                    f.close()
-                    found = True
 
-        if not found:
+            with ZipFile('logs.zip', 'w') as myzip:
+                for filename in filenames:
+                    if filename.endswith('.log'):
+                        found = True
+                        myzip.write(path.join(dirpath, filename))
+
+                myzip.close()
+
+        if found:
+            f = open('./logs.zip', 'rb')
+            self.sender.sendDocument(f)
+            f.close()
+        else:
             self.sender.sendMessage('No backed-up log files found')
 
     def clear_logs(self):
@@ -467,3 +479,8 @@ class Bot(telepot.helper.ChatHandler):
         rmtree(LOG_BACKUPS)
 
         self.sender.sendMessage('Backed up log files deleted')
+
+    def stats(self):
+        msg = get_pc_stats()
+
+        self.sender.sendMessage(msg)

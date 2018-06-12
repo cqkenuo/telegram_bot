@@ -9,6 +9,11 @@ os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
 # base = 'Win32GUI' if sys.platform == 'win32' else None
 base = None
 
+# Include chromedriver binary on windows by default and accommodate for linux
+include = ['chromedriver.exe', 'config.json']
+if not sys.platform.startswith('win'):
+    include = ['chromedriver', 'config.json']
+
 buildOptions = dict(
     packages=['test_bot'],
     includes=['selenium', 'nmap', 'telepot', 'pyx', 'pyx.attr',
@@ -22,8 +27,8 @@ buildOptions = dict(
               'pyx.graph.graph', 'pyx.graph.axis.axis',
               'pyx.graph.axis.painter', 'pyx.pattern',
               'pyx.normpath', 'dns', 'dns.resolver',
-              'pyodbc', 'bs4', 'mysql', 'scapy'],
-    include_files=['chromedriver.exe', 'config.json'],
+              'pyodbc', 'bs4', 'mysql', 'scapy', 'psutil'],
+    include_files=include,
     excludes=[])
 
 executables = [

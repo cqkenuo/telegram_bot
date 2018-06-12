@@ -118,11 +118,11 @@ def chan():
 
     try:
         parsed = BeautifulSoup(str(driver.find_element_by_class_name('board').get_attribute('innerHTML')), 'lxml')
-        results = parsed.findAll('img')
+        results = parsed.findAll('a', attrs={'class': 'fileThumb'})
 
         for im in results:
             try:
-                val = str(im['src'])
+                val = str(im['href'])
 
                 if 'i.4cdn' in val.lower():
                     images.append(str('https://' + val[2:]))
@@ -209,7 +209,7 @@ def get_firefox_driver(url):
 if __name__ == "__main__":
     import time
 
-    for i in get_gifs('test'):
+    for i in chan():
         print(i)
 
     # waiting period to ensure everything closes properly
