@@ -1,12 +1,11 @@
 # telegram_bot
 
-This is a personalized telegram bot with the following commands available to users: 
+#####This is a personalized telegram bot with the following commands available to users: 
 
-- /scan: Performs a port scan on the specified address passed as a parameter i.e. /scan <ip address>
-- /monitor: Sniffs the packets on the host machine running the script. Packet count to return is an optional parameter i.e. /monitor <number>
+- /scan: Performs a port scan on the specified address passed as a parameter 
+    - For example: `/scan <target ip address>`
 - /arp: Performs a network scan for all the devices connected to the script hosts network
 - /prev: Calls the previously received command
-- /trace: Runs a traceroute to the specified website/address (admin-only)
 - /reg: Registers the user as an admin only if a valid key is passed as a parameter
 - /help: Returns a list of available commands with descriptions
 - /img: Returns a random image result from the search (safe search is off by default)
@@ -16,19 +15,26 @@ This is a personalized telegram bot with the following commands available to use
 - /live: Returns a random result from the specified live leak search
 - /mybb: Returns the specified number (default 5) of the latest articles from the MyBroadband website
 - /b: Pulls a random image from 4chan.org/b (use at own peril)
-- /dns: Performs a DNS lookup on the provided hostname
 - /logs: Returns the backed-up log files (admin-only)
 - /clear_logs: Deletes the backed up log files (admin-only)
 - /stats: Returns the current cpu and memory use statistics of the host (admin-only)
+
+#####Temporarily disabled commands:
+
+- /trace: Runs a traceroute to the specified website/address (admin-only)
+- /monitor: Sniffs the packets on the host machine running the script. Packet count to return is an optional parameter 
+    - For example: `/monitor <number>`
+    
+#####Commands on the road-map:
+- /dns: Performs a DNS lookup on the provided hostname
 
 The bot was designed to keep running through most exceptions during runtime (apart from missing database or networking errors)
 
 ## Example usage (commandline): 
 
 #### Requirements
-##### Note: As this bot uses the PyX package to create pdf dumps, a form of the LaTeX software package needs to be installed
-- The LaTeX packages can be found at [LaTeX](https://www.latex-project.org/get/#tex-distributions)
-- An already set-up instance of MySQL needs to be running for this bot to work (needs a database named `test`)
+- An already set-up instance of MySQL needs to be running for this bot to work 
+    - Database name, user login details, host and port can be specified in the `config.json` file.
 
 #### Steps
 1. Modify the `template_config.json` to suit your setup and rename to `config.json`
@@ -48,3 +54,8 @@ if __name__ == "__main__":
     run()
 
 ```
+
+####Previous requirements that are no longer necessary
+
+- "As this bot uses the PyX package to create pdf dumps, a form of the LaTeX software package needs to be installed
+    - The LaTeX packages can be found at the [LaTeX website](https://www.latex-project.org/get/#tex-distributions)"

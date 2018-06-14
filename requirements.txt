@@ -6,6 +6,4 @@ pyodbc==4.0.23
 telepot==12.6
 python-nmap==0.6.1
 beautifulsoup4==4.6.0
-scapy==2.4.0
 dnspython==1.15.0
-PyX

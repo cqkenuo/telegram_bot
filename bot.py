@@ -2,12 +2,12 @@ from random import randint
 
 import nmap
 import telepot
-from scapy.all import *
+from threading import Thread
 
 from commands import bot_commands, command_descriptions, restricted_commands
-from database import RegisterDB, is_windows
+from database import RegisterDB
 from log import log, LOG_FILE, LOG_BACKUPS
-from search import search, r34, live_leak, my_bb, chan
+from web_scraping import search, r34, live_leak, my_bb, chan
 from util import get_pc_stats
 
 default_port_range = '22-5000'
@@ -149,18 +149,18 @@ class Bot(telepot.helper.ChatHandler):
                 # Admin-only commands
                 elif self.db.user_exists(chatid):
 
-                    # /monitor
-                    if cmd == bot_commands[1].lower():
-                        self.sender.sendMessage("Starting wifi monitor on local network")
-                        threading.Thread(target=self.sniff_packets(msg)).start()
+                    # # /monitor
+                    # if cmd == bot_commands[1].lower():
+                    #     self.sender.sendMessage("Starting wifi monitor on local network")
+                    #     threading.Thread(target=self.sniff_packets(msg)).start()
 
                     # /arp
-                    elif cmd == bot_commands[2].lower():
+                    if cmd == bot_commands[2].lower():
                         self.arp(msg)
 
                     # /trace
-                    elif cmd == bot_commands[4].lower():
-                        self.trace(msg)
+                    # elif cmd == bot_commands[4].lower():
+                    #     self.trace(msg)
 
                     # /clear
                     elif cmd == bot_commands[9].lower():
@@ -287,55 +287,55 @@ class Bot(telepot.helper.ChatHandler):
         else:
             self.sender.sendMessage(str(message))
 
-    def trace(self, msg):
-        from scapy.layers.inet import traceroute
+    # def trace(self, msg):
+    #     from scapy.layers.inet import traceroute
+    #
+    #     self.sender.sendMessage("Starting traceroute to: " + msg)
+    #
+    #     try:
+    #         # log("Bot.trace()", "msg: \"" + msg + "\"")
+    #         res, unans = traceroute([str(msg)], dport=[80, 443], maxttl=20, retry=-2)
+    #
+    #         res.pdfdump(TRACE_ROUTE_FILE)
+    #         f = open(str('./' + TRACE_ROUTE_FILE + '.pdf'), 'rb')
+    #
+    #         self.sender.sendDocument(f)
+    #     except:
+    #         log("Bot.trace()", "Unspecified error", True)
+    #         raise
 
-        self.sender.sendMessage("Starting traceroute to: " + msg)
-
-        try:
-            # log("Bot.trace()", "msg: \"" + msg + "\"")
-            res, unans = traceroute([str(msg)], dport=[80, 443], maxttl=20, retry=-2)
-
-            res.pdfdump(TRACE_ROUTE_FILE)
-            f = open(str('./' + TRACE_ROUTE_FILE + '.pdf'), 'rb')
-
-            self.sender.sendDocument(f)
-        except:
-            log("Bot.trace()", "Unspecified error", True)
-            raise
-
-    def sniff_packets(self, msg):
-        try:
-            os.remove(str('./' + PACKETS_FILE + '.pdf'))
-        except (OSError, FileNotFoundError):
-            pass
-
-        msg = str(msg).lower()
-        target = ''
-        try:
-            split_arr = msg.split(" ")
-            msg = split_arr[0]
-            target = split_arr[1]
-        except IndexError:
-            pass
-
-        count = 5
-        if msg and str(msg).isnumeric():
-            count = int(msg)
-
-        filter_str = 'icmp and host {}'.format(target)  # 'ip 137.215.98.24'
-        if is_windows():
-            res = sniff(filter=filter_str, count=count)
-        else:
-            res = sniff(iface='wlx7c8bca1c000a', filter=filter_str, count=count)
-
-        res.pdfdump(PACKETS_FILE)
-
-        f = open(str('./' + PACKETS_FILE + '.pdf'), 'rb')
-        if f:
-            self.sender.sendDocument(f)
-        else:
-            self.sender.sendMessage('No results returned...')
+    # def sniff_packets(self, msg):
+    #     try:
+    #         os.remove(str('./' + PACKETS_FILE + '.pdf'))
+    #     except (OSError, FileNotFoundError):
+    #         pass
+    #
+    #     msg = str(msg).lower()
+    #     target = ''
+    #     try:
+    #         split_arr = msg.split(" ")
+    #         msg = split_arr[0]
+    #         target = split_arr[1]
+    #     except IndexError:
+    #         pass
+    #
+    #     count = 5
+    #     if msg and str(msg).isnumeric():
+    #         count = int(msg)
+    #
+    #     filter_str = 'icmp and host {}'.format(target)  # 'ip 137.215.98.24'
+    #     if is_windows():
+    #         res = sniff(filter=filter_str, count=count)
+    #     else:
+    #         res = sniff(iface='wlx7c8bca1c000a', filter=filter_str, count=count)
+    #
+    #     # res.pdfdump(PACKETS_FILE)
+    #     #
+    #     # f = open(str('./' + PACKETS_FILE + '.pdf'), 'rb')
+    #     # if f:
+    #     #     self.sender.sendDocument(f)
+    #     # else:
+    #     #     self.sender.sendMessage('No results returned...')
 
     def register(self, chatid, msg):
         log("Bot.register()", "Confirming whether user is registered")
@@ -379,17 +379,15 @@ class Bot(telepot.helper.ChatHandler):
             self.sender.sendMessage("No results returned...")
         else:
             url = images[randint(0, len(images) - 1)]
-            # log('Bot.r34()', 'using: ' + url)
             self.sender.sendPhoto(url)
 
     def live(self, msg):
-        results = live_leak(msg)
+        res = live_leak(msg)
 
-        if len(results) < 1:
+        if len(res) < 1:
             self.sender.sendMessage("No results returned...")
         else:
-            url = results[randint(0, len(results) - 1)]
-            # log('Bot.r34()', 'using: ' + url)
+            url = res[randint(0, len(res) - 1)]
             self.sender.sendMessage(url)
 
     def my_broadband(self, msg):
@@ -409,12 +407,12 @@ class Bot(telepot.helper.ChatHandler):
                 self.sender.sendMessage(articles[x])
 
     def chanb(self):
-        results = chan()
+        res = chan()
 
-        if len(results) < 1:
+        if len(res) < 1:
             self.sender.sendMessage("No results returned...")
         else:
-            url = results[randint(0, len(results) - 1)]
+            url = res[randint(0, len(res) - 1)]
             # log('Bot.r34()', 'using: ' + url)
             self.sender.sendPhoto(url)
 
@@ -428,6 +426,8 @@ class Bot(telepot.helper.ChatHandler):
 
         self.sender.sendMessage("Local cache cleared")
 
+    # Should return the IP Address(es) of the specified host
+    # Using dns-python when socket.hostname() should suffice
     def dns(self, msg):
         from dns import resolver
 
@@ -465,6 +465,9 @@ class Bot(telepot.helper.ChatHandler):
                         found = True
                         myzip.write(path.join(dirpath, filename))
 
+                # append the current log file to the zip file
+                myzip.write(LOG_FILE)
+
                 myzip.close()
 
         if found:
@@ -478,7 +481,7 @@ class Bot(telepot.helper.ChatHandler):
         from shutil import rmtree
         rmtree(LOG_BACKUPS)
 
-        self.sender.sendMessage('Backed up log files deleted')
+        self.sender.sendMessage('Backed-up log files deleted')
 
     def stats(self):
         msg = get_pc_stats()

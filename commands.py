@@ -2,7 +2,7 @@ bot_commands = ["/scan", "/monitor", "/arp", "/prev", "/trace", "/reg", "/help",
                 "/img", "/r34", "/clear", "/log", "/live", "/mybb", "/b", "/dns",
                 "/logs", "/clear_logs", "/stats"]
 
-restricted_commands = ["/monitor", "/arp", "/trace", "/clear"]
+restricted_commands = ["/monitor", "/arp", "/trace", "/clear", "/log", "/logs", "/clear_logs", "/stats"]
 
 command_descriptions = ['Performs a port scan on the specified address passed as a parameter i.e. /scan <ip address>',
                         'Sniffs the packets on the host machine running the script. '

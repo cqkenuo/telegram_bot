@@ -11,12 +11,14 @@ from log import log, config, clear_logs, logging, LOG_FILE
 CACHE_CLEAR_PERIOD = config['cache_clear_interval']
 DEBUGGING = config['debugging']
 
+# Delegator bot for multiple threaded instances of the Bot class
 bot = telepot.DelegatorBot(config["token"], [
     pave_event_space()(
         per_chat_id(), create_open, Bot, timeout=10),
 ])
 
 
+# Used to catch SIGINT and SIGTERM signals
 class SignalProcess:
     kill_now = False
 
