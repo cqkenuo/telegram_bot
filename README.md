@@ -1,6 +1,6 @@
 # telegram_bot
 
-#####This is a personalized telegram bot with the following commands available to users: 
+##### This is a personalized telegram bot with the following commands available to users: 
 
 - /scan: Performs a port scan on the specified address passed as a parameter 
     - For example: `/scan <target ip address>`
@@ -19,13 +19,13 @@
 - /clear_logs: Deletes the backed up log files (admin-only)
 - /stats: Returns the current cpu and memory use statistics of the host (admin-only)
 
-#####Temporarily disabled commands:
+##### Temporarily disabled commands:
 
 - /trace: Runs a traceroute to the specified website/address (admin-only)
 - /monitor: Sniffs the packets on the host machine running the script. Packet count to return is an optional parameter 
     - For example: `/monitor <number>`
     
-#####Commands on the road-map:
+##### Commands on the road-map:
 - /dns: Performs a DNS lookup on the provided hostname
 
 The bot was designed to keep running through most exceptions during runtime (apart from missing database or networking errors)
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
 ```
 
-####Previous requirements that are no longer necessary
+#### Previous requirements that are no longer necessary
 
 - "As this bot uses the PyX package to create pdf dumps, a form of the LaTeX software package needs to be installed
     - The LaTeX packages can be found at the [LaTeX website](https://www.latex-project.org/get/#tex-distributions)"
