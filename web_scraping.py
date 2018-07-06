@@ -191,6 +191,8 @@ def site_data(url):
 def get_chrome_driver(url):
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
+    options.add_argument("--disable-extensions")
+    options.binary_location = './'
     driver = webdriver.Chrome(chrome_options=options)
 
     try:

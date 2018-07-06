@@ -17,12 +17,7 @@ def generate(count):
     global insert_query
 
     cryptogen = SystemRandom()
-
-    if is_windows():
-        database = connector.connect(**connection_string())
-    else:
-        database = pyodbc.connect(connection_string())
-        insert_query = """INSERT INTO RegIDs (RegID) VALUES (?)"""
+    database = connector.connect(**connection_string_mysql)
 
     check_for_table(database)
     cursor = database.cursor()
@@ -45,7 +40,7 @@ def check_for_table(database):
 
     try:
         cursor.execute(create_if_not_exists_query)
-    except (pyodbc.DataError, pyodbc.ProgrammingError):
+    except connector.Error:
         log("insert()", "Truncated string or ProgrammingError")
         raise
 

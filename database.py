@@ -1,4 +1,4 @@
-import pyodbc
+# import pyodbc
 import sys
 
 from log import log, config
@@ -18,16 +18,16 @@ clashes_query = """SELECT 1 FROM Chats WHERE ChatID=%s AND RegID=%s"""
 disable_warnings_query = "SET sql_notes = 0;"
 enable_warnings_query = "SET sql_notes = 1;"
 
-# MySQL connection string
-connection_string_mysql_linux = ("DRIVER={MySQL ODBC 5.1 Driver};"
-                                 + "SERVER=" + config['db_host'] + ";"
-                                 + "DATABASE=" + config['db_name'] + ";"
-                                 + "PORT=" + config['db_port'] + ";"
-                                 + "USER=" + config['db_user'] + ";"
-                                 + "PASSWORD=" + config['db_pass'] + ";"
-                                 + "OPTION=3;")
+# # MySQL connection string
+# connection_string_mysql_linux = ("DRIVER={MySQL ODBC 5.1 Driver};"
+#                                  + "SERVER=" + config['db_host'] + ";"
+#                                  + "DATABASE=" + config['db_name'] + ";"
+#                                  + "PORT=" + config['db_port'] + ";"
+#                                  + "USER=" + config['db_user'] + ";"
+#                                  + "PASSWORD=" + config['db_pass'] + ";"
+#                                  + "OPTION=3;")
 
-connection_string_mysql_win = {
+connection_string_mysql = {
     'user': config['db_user'],
     'password': config['db_pass'],
     'host': config['db_host'],
@@ -41,34 +41,17 @@ def is_windows():
     return sys.platform.startswith('win')
 
 
-def connection_string():
-    if is_windows():
-        return connection_string_mysql_win
-    else:
-        return connection_string_mysql_linux
-
-
 class RegisterDB:
 
     def __init__(self):
         try:
 
-            if is_windows():
-                self.db = connector.connect(**connection_string_mysql_win)
-            else:
-                self.db = pyodbc.connect(connection_string_mysql_linux)
+            self.db = connector.connect(**connection_string_mysql)
 
             self.cursor = None
             self.check_for_table()
 
-            if not is_windows():
-                global insert_query, user_exists_query, exists_query, clashes_query
-                insert_query = """INSERT INTO Chats (ChatID,RegID) VALUES (?,?)"""
-                exists_query = """SELECT 1 FROM RegIDs WHERE RegID=?"""
-                user_exists_query = """SELECT 1 FROM Chats WHERE ChatID=?"""
-                clashes_query = """SELECT 1 FROM Chats WHERE ChatID=? AND RegID=?"""
-
-        except pyodbc.Error as e:
+        except connector.Error as e:
             log('RegisterDB.__init__()', 'failed to open db', True)
             raise
 
@@ -80,7 +63,7 @@ class RegisterDB:
 
         try:
             self.cursor.execute(create_if_not_exists_query)
-        except (pyodbc.DataError, pyodbc.ProgrammingError):
+        except connector.Error:
             log("insert()", "Truncated string or ProgrammingError", True)
             raise
 
@@ -103,7 +86,7 @@ class RegisterDB:
 
         try:
             self.cursor.execute(insert_query, values)
-        except (pyodbc.DataError, pyodbc.IntegrityError) as d:
+        except connector.Error as d:
             log("RegisterDB.insert()", "Statement error", True)
             pass
         except:
@@ -125,7 +108,7 @@ class RegisterDB:
             if self.cursor.fetchone():
                 return True
 
-        except pyodbc.DataError as d:
+        except connector.Error as d:
             log("RegisterDB.exists()", "Truncating string error", True)
 
         self.cursor.close()
@@ -148,7 +131,7 @@ class RegisterDB:
                 log("RegisterDB.user_exists()", "User exists")
                 return True
 
-        except pyodbc.DataError as d:
+        except connector.Error as d:
             log("RegisterDB.user_exists()", "Data error", True)
         except:
             log('RegisterDB.user_exists()', 'Unspecified exception caught', True)
@@ -172,7 +155,7 @@ class RegisterDB:
             if self.cursor.fetchone():
                 return True
 
-        except pyodbc.DataError as d:
+        except connector.Error as d:
             log("RegisterDB.clashes()", "Data error", True)
 
         self.cursor.close()
