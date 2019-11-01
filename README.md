@@ -8,8 +8,7 @@
 - /prev: Calls the previously received command
 - /reg: Registers the user as an admin only if a valid key is passed as a parameter
 - /help: Returns a list of available commands with descriptions
-- /img: Returns a random image result from the search (safe search is off by default)
-- /r34: Performs an r34 search for the provided search term
+- /img: Returns a random image result from the search
 - /clear: Clears any cache arrays present (admin-only)
 - /log: Returns the debugging log file (admin-only - personal information still saved in this version of the bot)
 - /live: Returns a random result from the specified live leak search
@@ -54,8 +53,3 @@ if __name__ == "__main__":
     run()
 
 ```
-
-#### Previous requirements that are no longer necessary
-
-- "As this bot uses the PyX package to create pdf dumps, a form of the LaTeX software package needs to be installed
-    - The LaTeX packages can be found at the [LaTeX website](https://www.latex-project.org/get/#tex-distributions)"
