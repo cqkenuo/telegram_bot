@@ -13,7 +13,6 @@
 - /log: Returns the debugging log file (admin-only - personal information still saved in this version of the bot)
 - /live: Returns a random result from the specified live leak search
 - /mybb: Returns the specified number (default 5) of the latest articles from the MyBroadband website
-- /b: Pulls a random image from 4chan.org/b (use at own peril)
 - /logs: Returns the backed-up log files (admin-only)
 - /clear_logs: Deletes the backed up log files (admin-only)
 - /stats: Returns the current cpu and memory use statistics of the host (admin-only)
